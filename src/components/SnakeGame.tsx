@@ -8,6 +8,8 @@ import {
   ArrowRight 
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useWeb3 } from '@/components/Web3Provider';
 
 // Define types
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
@@ -28,6 +30,7 @@ const INITIAL_SNAKE = [
 
 const SnakeGame: React.FC = () => {
   const { toast } = useToast();
+  const { isConnected, address } = useWeb3();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [snake, setSnake] = useState<Coordinate[]>(INITIAL_SNAKE);
   const [food, setFood] = useState<Coordinate>({ x: 15, y: 15 });
@@ -38,6 +41,7 @@ const SnakeGame: React.FC = () => {
   const [highScore, setHighScore] = useState<number>(0);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [isSavingScore, setIsSavingScore] = useState<boolean>(false);
   
   const directionRef = useRef<Direction>(direction);
   const gameLoopRef = useRef<number | null>(null);
@@ -73,6 +77,40 @@ const SnakeGame: React.FC = () => {
     
     return newFood;
   }, [snake]);
+
+  // Save score to Supabase
+  const saveScore = async () => {
+    if (!isConnected || !address || score === 0 || isSavingScore) return;
+    
+    try {
+      setIsSavingScore(true);
+      
+      const { error } = await supabase
+        .from('scores')
+        .insert([
+          { user_id: address, score: score }
+        ]);
+      
+      if (error) {
+        console.error("Error saving score:", error);
+        toast({
+          title: "Score not saved",
+          description: "There was a problem saving your score.",
+          variant: "destructive"
+        });
+      } else {
+        console.log("Score saved successfully");
+        toast({
+          title: "Score saved",
+          description: "Your score has been added to the leaderboard.",
+        });
+      }
+    } catch (err) {
+      console.error("Error in saveScore:", err);
+    } finally {
+      setIsSavingScore(false);
+    }
+  };
 
   // Draw game on canvas
   const drawGame = useCallback(() => {
@@ -218,6 +256,11 @@ const SnakeGame: React.FC = () => {
     if (score > highScore) {
       setHighScore(score);
       localStorage.setItem('snakeHighScore', score.toString());
+    }
+
+    // Save score to database if user is connected
+    if (isConnected && address) {
+      saveScore();
     }
 
     toast({
@@ -380,6 +423,15 @@ const SnakeGame: React.FC = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 rounded-md">
             <h2 className="text-2xl font-bold text-white mb-2">Game Over!</h2>
             <p className="text-xl text-game-token mb-4">Score: {score}</p>
+            
+            {!isConnected ? (
+              <p className="mb-3 text-sm text-yellow-400">Connect wallet to save your score!</p>
+            ) : isSavingScore ? (
+              <p className="mb-3 text-sm text-green-400">Saving your score...</p>
+            ) : (
+              <p className="mb-3 text-sm text-green-400">Score saved to leaderboard!</p>
+            )}
+            
             <Button 
               onClick={() => window.location.href = '/reward'} 
               className="mb-3 bg-yellow-500 hover:bg-yellow-600"

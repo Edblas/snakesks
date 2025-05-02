@@ -1,38 +1,63 @@
 
 import { Button } from '@/components/ui/button';
 import SnakeGame from '@/components/SnakeGame';
+import Leaderboard from '@/components/Leaderboard';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useWeb3 } from '@/components/Web3Provider';
 
 const Index = () => {
-  const [connected, setConnected] = useState(false);
+  const { connectWallet, isConnected, isConnecting, tokenBalance, address } = useWeb3();
   const navigate = useNavigate();
   
   const handleConnectWallet = () => {
-    // In a real implementation, this would connect to MetaMask or other wallet
-    setConnected(true);
+    connectWallet();
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center pt-8 px-4">
-      <header className="w-full max-w-md flex justify-between items-center mb-8">
+      <header className="w-full max-w-3xl flex justify-between items-center mb-8 px-4">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold text-game-token">Snake <span className="text-white">Arcade</span></h1>
         </div>
         
-        <Button
-          onClick={handleConnectWallet}
-          className={`text-sm ${connected ? 'bg-green-600' : 'bg-game-token'} hover:bg-opacity-90`}
-        >
-          {connected ? 'Wallet Connected' : 'Connect Wallet'}
-        </Button>
+        <div className="flex items-center space-x-4">
+          {isConnected && (
+            <div className="hidden sm:block text-sm bg-gray-800 rounded-full px-3 py-1">
+              <span className="text-gray-400">Balance:</span> <span className="text-game-token font-semibold">{tokenBalance} SKS</span>
+            </div>
+          )}
+          
+          <Button
+            onClick={handleConnectWallet}
+            disabled={isConnecting}
+            className={`text-sm ${isConnected ? 'bg-green-600' : 'bg-game-token'} hover:bg-opacity-90`}
+          >
+            {isConnecting ? 'Connecting...' : isConnected ? 'Wallet Connected' : 'Connect Wallet'}
+          </Button>
+          
+          {isConnected && (
+            <Button
+              onClick={() => navigate('/rewards')}
+              className="text-sm bg-yellow-600 hover:bg-yellow-700"
+            >
+              My Rewards
+            </Button>
+          )}
+        </div>
       </header>
 
-      <main className="w-full max-w-md">
-        <SnakeGame />
+      <main className="w-full max-w-3xl flex flex-col lg:flex-row items-start justify-center gap-8 px-4">
+        <div className="w-full lg:w-auto">
+          <SnakeGame />
+        </div>
+        
+        <div className="w-full lg:w-auto mt-8 lg:mt-0">
+          <Leaderboard />
+        </div>
       </main>
 
-      <footer className="mt-8 text-center text-sm text-gray-500">
+      <footer className="mt-12 text-center text-sm text-gray-500 pb-8">
         <p>Play Snake, watch ads, earn SKS tokens!</p>
         <p className="mt-2 text-xs">Built on Polygon Network</p>
       </footer>
