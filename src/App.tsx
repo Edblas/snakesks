@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Reward from "./pages/Reward";
 import TopScores from "./pages/TopScores";
 import NotFound from "./pages/NotFound";
+import Rewards from "./pages/Rewards";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reward" element={<Reward />} />
+            <Route path="/rewards" element={<Rewards />} />
             <Route path="/top-scores" element={<TopScores />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
