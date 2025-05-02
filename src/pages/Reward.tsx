@@ -3,34 +3,46 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useWeb3 } from '@/components/Web3Provider';
 
 const Reward = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isConnected } = useWeb3();
   const [adWatched, setAdWatched] = useState(false);
   const [tokensClaimed, setTokensClaimed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [countdown, setCountdown] = useState(5);
-
-  // Simulate ad loading and watching
+  const [countdown, setCountdown] = useState(15); // Increased countdown for mandatory viewing
+  const [isAdVisible, setIsAdVisible] = useState(true);
+  
+  // Simulate ad loading and watching with mandatory viewing
   useEffect(() => {
-    if (!adWatched && countdown > 0) {
+    if (isAdVisible && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
     }
     
-    if (!adWatched && countdown === 0) {
+    if (isAdVisible && countdown === 0) {
       setAdWatched(true);
       toast({
         title: "Ad completed!",
         description: "You can now claim your SKS tokens.",
       });
     }
-  }, [adWatched, countdown, toast]);
+  }, [isAdVisible, countdown, toast]);
 
   const handleClaimTokens = () => {
+    if (!adWatched) {
+      toast({
+        title: "Ad not completed",
+        description: "You must watch the entire ad before claiming tokens.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     // Simulate token claim process
@@ -48,28 +60,37 @@ const Reward = () => {
     navigate('/');
   };
 
+  const skipAd = () => {
+    // Navigate back without claiming tokens
+    navigate('/');
+    toast({
+      title: "Ad skipped",
+      description: "You must watch the ad to claim tokens.",
+      variant: "destructive"
+    });
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-gray-900 rounded-lg p-6 shadow-lg">
         <h1 className="text-2xl font-bold text-center mb-6">Earn SKS Tokens</h1>
         
-        <div className="mb-8 bg-gray-800 rounded-lg p-4 text-center">
-          {!adWatched ? (
-            <>
-              <div className="animate-pulse mb-4 h-40 bg-gray-700 rounded flex items-center justify-center">
-                <p className="text-xl">Ad loading... {countdown}</p>
-              </div>
-              <p className="text-sm text-gray-400">Please wait while the ad loads...</p>
-            </>
-          ) : (
-            <div className="py-4">
-              <div className="mb-4 h-40 bg-gray-700 rounded flex items-center justify-center">
+        {isAdVisible && (
+          <div className="mb-8 bg-gray-800 rounded-lg p-4 text-center">
+            <div className="animate-pulse mb-4 h-40 bg-gray-700 rounded flex items-center justify-center">
+              {!adWatched ? (
+                <p className="text-xl">Ad playing... {countdown}s</p>
+              ) : (
                 <p className="text-xl">Ad completed!</p>
-              </div>
-              <p className="text-green-400 font-semibold">Thanks for watching!</p>
+              )}
             </div>
-          )}
-        </div>
+            <p className="text-sm text-gray-400">
+              {!adWatched 
+                ? "Please wait until the ad is complete. Skipping will forfeit your tokens." 
+                : "Thanks for watching!"}
+            </p>
+          </div>
+        )}
         
         <div className="text-center mb-6">
           <div className="flex justify-center items-center mb-4">
@@ -82,14 +103,18 @@ const Reward = () => {
           
           <Button
             onClick={handleClaimTokens}
-            disabled={!adWatched || tokensClaimed || isLoading}
-            className={`w-full ${!adWatched ? 'bg-gray-600' : tokensClaimed ? 'bg-green-700' : 'bg-game-token hover:bg-purple-600'}`}
+            disabled={!adWatched || tokensClaimed || isLoading || !isConnected}
+            className={`w-full ${!adWatched || !isConnected ? 'bg-gray-600' : tokensClaimed ? 'bg-green-700' : 'bg-game-token hover:bg-purple-600'}`}
           >
             {isLoading ? 'Processing...' : tokensClaimed ? 'Tokens Claimed!' : 'Claim SKS Tokens'}
           </Button>
+          
+          {!isConnected && (
+            <p className="mt-2 text-xs text-yellow-400">Connect your wallet to claim tokens</p>
+          )}
         </div>
         
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <Button
             variant="outline"
             onClick={playAgain}
@@ -97,6 +122,16 @@ const Reward = () => {
           >
             Play Again
           </Button>
+          
+          {!adWatched && (
+            <Button
+              variant="ghost"
+              onClick={skipAd}
+              className="w-full text-gray-400 hover:text-white hover:bg-gray-800"
+            >
+              Skip (No Tokens)
+            </Button>
+          )}
         </div>
       </div>
       

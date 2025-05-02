@@ -5,6 +5,7 @@ import Leaderboard from '@/components/Leaderboard';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '@/components/Web3Provider';
+import { Trophy } from 'lucide-react';
 
 const Index = () => {
   const { connectWallet, isConnected, isConnecting, tokenBalance, address } = useWeb3();
@@ -54,6 +55,15 @@ const Index = () => {
         
         <div className="w-full lg:w-auto mt-8 lg:mt-0">
           <Leaderboard />
+          <div className="mt-4 text-center">
+            <Button 
+              onClick={() => navigate('/top-scores')} 
+              variant="outline" 
+              className="border-gray-700 text-white hover:bg-gray-800 w-full flex items-center justify-center"
+            >
+              <Trophy className="mr-2 h-4 w-4" /> View All Top Scores
+            </Button>
+          </div>
         </div>
       </main>
 

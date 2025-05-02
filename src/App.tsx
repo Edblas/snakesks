@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Web3Provider } from "@/components/Web3Provider";
 import Index from "./pages/Index";
 import Reward from "./pages/Reward";
+import TopScores from "./pages/TopScores";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reward" element={<Reward />} />
+            <Route path="/top-scores" element={<TopScores />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
