@@ -22,7 +22,7 @@ export const generateFood = (snake: Coordinate[]): Coordinate => {
   return newFood;
 };
 
-// Draw game on canvas
+// Draw game on canvas with improved performance
 export const drawGame = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   snake: Coordinate[],
@@ -32,26 +32,30 @@ export const drawGame = (
   const canvas = canvasRef.current;
   if (!canvas) return;
   
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) return;
   
-  // Clear canvas
+  // Clear canvas - faster method
   ctx.fillStyle = '#121212';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Draw grid
+  // Draw lighter grid for better performance
   ctx.strokeStyle = '#1F1F1F';
+  ctx.beginPath();
+  
+  // Draw vertical grid lines
   for (let i = 0; i < 20; i++) {
-    ctx.beginPath();
     ctx.moveTo(i * CELL_SIZE, 0);
     ctx.lineTo(i * CELL_SIZE, 20 * CELL_SIZE);
-    ctx.stroke();
-    
-    ctx.beginPath();
+  }
+  
+  // Draw horizontal grid lines
+  for (let i = 0; i < 20; i++) {
     ctx.moveTo(0, i * CELL_SIZE);
     ctx.lineTo(20 * CELL_SIZE, i * CELL_SIZE);
-    ctx.stroke();
   }
+  
+  ctx.stroke();
   
   // Draw food
   ctx.fillStyle = '#F97316';
@@ -65,22 +69,28 @@ export const drawGame = (
   );
   ctx.fill();
   
-  // Draw snake
-  snake.forEach((segment, index) => {
-    // Head is brighter
-    if (index === 0) {
-      ctx.fillStyle = '#4ADE80';
-    } else {
-      // Body gets darker towards the tail
-      const darkenFactor = Math.max(0.6, 1 - index * 0.03);
-      ctx.fillStyle = `rgba(74, 222, 128, ${darkenFactor})`;
-    }
-    
+  // Draw snake - use a simpler rendering method for better performance
+  const head = snake[0];
+  const body = snake.slice(1);
+  
+  // Draw head
+  ctx.fillStyle = '#4ADE80';
+  ctx.fillRect(
+    head.x * CELL_SIZE,
+    head.y * CELL_SIZE,
+    CELL_SIZE - 1,
+    CELL_SIZE - 1
+  );
+  
+  // Draw body with single color for better performance
+  ctx.fillStyle = 'rgba(74, 222, 128, 0.8)';
+  for (let i = 0; i < body.length; i++) {
+    const segment = body[i];
     ctx.fillRect(
       segment.x * CELL_SIZE,
       segment.y * CELL_SIZE,
       CELL_SIZE - 1,
       CELL_SIZE - 1
     );
-  });
+  }
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSnakeGame } from '@/hooks/useSnakeGame';
 import GameControls from '@/components/snake/GameControls';
@@ -37,6 +37,7 @@ const SnakeGame: React.FC = () => {
           width={GRID_SIZE * CELL_SIZE}
           height={GRID_SIZE * CELL_SIZE}
           className="border-2 border-gray-700 rounded-md"
+          style={{ imageRendering: 'pixelated' }}
         />
         
         <GameOverlay

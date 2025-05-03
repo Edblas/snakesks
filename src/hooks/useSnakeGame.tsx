@@ -23,11 +23,16 @@ export const useSnakeGame = () => {
   
   const directionRef = useRef<Direction>(direction);
   const gameLoopRef = useRef<number | null>(null);
+  const snakeRef = useRef<Coordinate[]>(snake);
 
-  // Update direction ref when direction changes
+  // Update refs when state changes
   useEffect(() => {
     directionRef.current = direction;
   }, [direction]);
+
+  useEffect(() => {
+    snakeRef.current = snake;
+  }, [snake]);
 
   // Load high score from localStorage
   useEffect(() => {
@@ -37,8 +42,8 @@ export const useSnakeGame = () => {
     }
   }, []);
 
-  // Save score to Supabase
-  const saveScore = async () => {
+  // Save score to Supabase - optimized to prevent re-renders
+  const saveScore = useCallback(async () => {
     if (!isConnected || !address || score === 0 || isSavingScore) return;
     
     try {
@@ -69,14 +74,15 @@ export const useSnakeGame = () => {
     } finally {
       setIsSavingScore(false);
     }
-  };
+  }, [isConnected, address, score, isSavingScore, toast]);
 
-  // Game loop
+  // Optimized game loop with requestAnimationFrame
   const gameLoop = useCallback(() => {
-    if (isGameOver || isPaused) return;
+    if (isGameOver || isPaused) return null;
     
     const currentDirection = directionRef.current;
-    const head = { ...snake[0] };
+    const currentSnake = [...snakeRef.current];
+    const head = { ...currentSnake[0] };
     
     // Move head based on direction
     switch (currentDirection) {
@@ -102,17 +108,17 @@ export const useSnakeGame = () => {
       head.y >= GRID_SIZE
     ) {
       handleGameOver();
-      return;
+      return null;
     }
     
     // Check for collisions with self
-    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+    if (currentSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
       handleGameOver();
-      return;
+      return null;
     }
     
     // Create new snake array
-    const newSnake = [head, ...snake];
+    const newSnake = [head, ...currentSnake];
     
     // Check if snake ate food
     if (head.x === food.x && head.y === food.y) {
@@ -129,25 +135,32 @@ export const useSnakeGame = () => {
       newSnake.pop();
     }
     
-    // Update snake
+    // Update snake with batched state update
     setSnake(newSnake);
-  }, [isGameOver, isPaused, snake, food, score]);
-
-  // Start game loop
-  const startGameLoop = useCallback(() => {
-    if (gameLoopRef.current) {
-      clearInterval(gameLoopRef.current);
+    snakeRef.current = newSnake;
+    
+    // Draw game
+    if (canvasRef.current) {
+      drawGame(canvasRef, newSnake, food);
     }
     
-    gameLoopRef.current = window.setInterval(() => {
-      gameLoop();
-    }, GAME_SPEED);
+    // Continue game loop with requestAnimationFrame
+    return requestAnimationFrame(gameLoop);
+  }, [isGameOver, isPaused, food, score]);
+
+  // Start game loop with requestAnimationFrame
+  const startGameLoop = useCallback(() => {
+    if (gameLoopRef.current) {
+      cancelAnimationFrame(gameLoopRef.current);
+    }
+    
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
   }, [gameLoop]);
 
   // Handle game over
-  const handleGameOver = () => {
+  const handleGameOver = useCallback(() => {
     if (gameLoopRef.current) {
-      clearInterval(gameLoopRef.current);
+      cancelAnimationFrame(gameLoopRef.current);
       gameLoopRef.current = null;
     }
     
@@ -168,11 +181,12 @@ export const useSnakeGame = () => {
       title: "Game Over!",
       description: `Your score: ${score}. Watch an ad to earn SKS tokens!`,
     });
-  };
+  }, [score, highScore, isConnected, address, saveScore, toast]);
 
   // Reset game
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setSnake(INITIAL_SNAKE);
+    snakeRef.current = INITIAL_SNAKE;
     setFood(generateFood(INITIAL_SNAKE));
     setDirection('UP');
     directionRef.current = 'UP';
@@ -180,13 +194,36 @@ export const useSnakeGame = () => {
     setIsPaused(false);
     setScore(0);
     setGameStarted(true);
-    startGameLoop();
-  };
+    
+    if (gameLoopRef.current) {
+      cancelAnimationFrame(gameLoopRef.current);
+    }
+    
+    // Start with a slight delay to allow state updates
+    setTimeout(() => {
+      startGameLoop();
+    }, 50);
+  }, [startGameLoop]);
 
   // Toggle pause
-  const togglePause = () => {
-    setIsPaused(prev => !prev);
-  };
+  const togglePause = useCallback(() => {
+    setIsPaused(prev => {
+      const newPaused = !prev;
+      
+      if (newPaused) {
+        // Cancel animation frame when paused
+        if (gameLoopRef.current) {
+          cancelAnimationFrame(gameLoopRef.current);
+          gameLoopRef.current = null;
+        }
+      } else {
+        // Start animation frame when resumed
+        startGameLoop();
+      }
+      
+      return newPaused;
+    });
+  }, [startGameLoop]);
 
   // Handle keyboard input
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -222,7 +259,7 @@ export const useSnakeGame = () => {
   }, [gameStarted, togglePause]);
 
   // Handle direction button clicks
-  const handleDirectionClick = (newDirection: Direction) => {
+  const handleDirectionClick = useCallback((newDirection: Direction) => {
     if (!gameStarted) return;
     
     const currentDirection = directionRef.current;
@@ -249,16 +286,16 @@ export const useSnakeGame = () => {
         }
         break;
     }
-  };
+  }, [gameStarted]);
 
-  // Set up keyboard listeners and draw game
+  // Set up keyboard listeners
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
+        cancelAnimationFrame(gameLoopRef.current);
       }
     };
   }, [handleKeyDown]);
@@ -271,29 +308,26 @@ export const useSnakeGame = () => {
     
     return () => {
       if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
+        cancelAnimationFrame(gameLoopRef.current);
       }
     };
   }, [gameStarted, isGameOver, isPaused, startGameLoop]);
 
-  // Resume/pause game loop when pause state changes
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, []);
+
+  // Stop drawing game on every render, only draw when snake or food changes
   useEffect(() => {
     if (gameStarted && !isGameOver) {
-      if (isPaused) {
-        if (gameLoopRef.current) {
-          clearInterval(gameLoopRef.current);
-          gameLoopRef.current = null;
-        }
-      } else {
-        startGameLoop();
-      }
+      drawGame(canvasRef, snake, food);
     }
-  }, [isPaused, gameStarted, isGameOver, startGameLoop]);
-
-  // Draw game whenever snake or food changes
-  useEffect(() => {
-    drawGame(canvasRef, snake, food);
-  }, [snake, food]);
+  }, [snake, food, gameStarted, isGameOver]);
 
   return {
     canvasRef,
