@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useSnakeGame } from '@/hooks/useSnakeGame';
+import { useSnakeGame } from '@/hooks/snake/useSnakeGame';
 import GameControls from '@/components/snake/GameControls';
 import GameOverlay from '@/components/snake/GameOverlay';
 import { useWeb3 } from '@/components/Web3Provider';
