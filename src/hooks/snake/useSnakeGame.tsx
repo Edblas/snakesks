@@ -1,44 +1,49 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useWeb3 } from '@/components/Web3Provider';
-import { Direction, Coordinate, INITIAL_SNAKE } from '@/components/snake/types';
-import { generateFood } from '@/components/snake/gameUtils';
+import { Direction, INITIAL_SNAKE } from '@/components/snake/types';
+
+// Import our new smaller hooks
 import { useSnakeMovement } from './useSnakeMovement';
 import { useSnakeScore } from './useSnakeScore';
 import { useSnakeGameLoop } from './useSnakeGameLoop';
 import { useSnakeControls } from './useSnakeControls';
+import { useGameState } from './useGameState';
+import { useSplashScreen } from './useSplashScreen';
+import { useGameOver } from './useGameOver';
+import { useKeyboardControls } from './useKeyboardControls';
+import { useDirectionControls } from './useDirectionControls';
+import { useGameInitialization } from './useGameInitialization';
+import { useGameLoopManager } from './useGameLoopManager';
 
 export const useSnakeGame = () => {
   const toast = useToast();
   const { isConnected, address } = useWeb3();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isGameOver, setIsGameOver] = useState<boolean>(false);
-  const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [showControls, setShowControls] = useState<boolean>(false);
-  const [isSavingScore, setIsSavingScore] = useState<boolean>(false);
-  const [showSplash, setShowSplash] = useState<boolean>(true);
   
-  // Initialize movement-related state first
+  // Initialize game state
+  const {
+    isGameOver, setIsGameOver,
+    isPaused, setIsPaused,
+    gameStarted, setGameStarted,
+    showControls, setShowControls,
+    isSavingScore, setIsSavingScore
+  } = useGameState();
+  
+  // Initialize splash screen state
+  const { showSplash, setShowSplash } = useSplashScreen();
+  
+  // Initialize movement-related state
   const { 
-    snake, 
-    setSnake, 
-    snakeRef, 
-    food, 
-    setFood, 
-    direction, 
-    setDirection, 
-    directionRef 
+    snake, setSnake, snakeRef, 
+    food, setFood, direction, 
+    setDirection, directionRef 
   } = useSnakeMovement();
   
   // Initialize score-related state and functions
   const { 
-    score, 
-    setScore, 
-    highScore, 
-    setHighScore, 
-    saveScore 
+    score, setScore, highScore, 
+    setHighScore, saveScore 
   } = useSnakeScore(
     isConnected, 
     address, 
@@ -47,35 +52,21 @@ export const useSnakeGame = () => {
     toast
   );
 
-  // Initialize gameLoopRef before passing to any hooks
-  const gameLoopRef = useRef<number | null>(null);
+  // Initialize game initialization (canvasRef and gameLoopRef)
+  const { canvasRef, gameLoopRef } = useGameInitialization(setHighScore);
   
-  // Handle game over
-  const handleGameOver = () => {
-    if (gameLoopRef.current) {
-      cancelAnimationFrame(gameLoopRef.current);
-      gameLoopRef.current = null;
-    }
-    
-    setIsGameOver(true);
-    
-    // Update high score if needed
-    if (score > highScore) {
-      setHighScore(score);
-      localStorage.setItem('snakeHighScore', score.toString());
-    }
-
-    // Save score to database if user is connected
-    if (isConnected && address) {
-      saveScore(score);
-    }
-
-    toast.toast({
-      title: "Game Over!",
-      description: `Your score: ${score}. Watch an ad to earn SKS tokens!`,
-    });
-  };
-
+  // Initialize game over handler
+  const { handleGameOver } = useGameOver({
+    score,
+    highScore,
+    setHighScore,
+    isConnected,
+    address,
+    saveScore,
+    setIsGameOver,
+    gameLoopRef
+  });
+  
   // Initialize game loop
   const { startGameLoop, resetSpeed } = useSnakeGameLoop({
     isGameOver,
@@ -91,7 +82,7 @@ export const useSnakeGame = () => {
     handleGameOver
   });
   
-  // Initialize controls after startGameLoop is defined
+  // Initialize controls
   const { togglePause, resetGame } = useSnakeControls({
     setSnake,
     snakeRef,
@@ -104,104 +95,33 @@ export const useSnakeGame = () => {
     setGameStarted,
     gameLoopRef,
     startGameLoop,
-    resetSpeed,  // Passando a nova função
+    resetSpeed,
     INITIAL_SNAKE
   });
   
-  // Handle direction clicks
-  const handleDirectionClick = (newDirection: Direction) => {
-    if (!gameStarted) return;
-    
-    const currentDirection = directionRef.current;
-    
-    switch (newDirection) {
-      case 'UP':
-        if (currentDirection !== 'DOWN') {
-          setDirection('UP');
-        }
-        break;
-      case 'DOWN':
-        if (currentDirection !== 'UP') {
-          setDirection('DOWN');
-        }
-        break;
-      case 'LEFT':
-        if (currentDirection !== 'RIGHT') {
-          setDirection('LEFT');
-        }
-        break;
-      case 'RIGHT':
-        if (currentDirection !== 'LEFT') {
-          setDirection('RIGHT');
-        }
-        break;
-    }
-  };
-
-  // Set up keyboard listeners
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!gameStarted) return;
-      
-      const currentDirection = directionRef.current;
-      
-      switch (e.key) {
-        case 'ArrowUp':
-          if (currentDirection !== 'DOWN') {
-            setDirection('UP');
-          }
-          break;
-        case 'ArrowDown':
-          if (currentDirection !== 'UP') {
-            setDirection('DOWN');
-          }
-          break;
-        case 'ArrowLeft':
-          if (currentDirection !== 'RIGHT') {
-            setDirection('LEFT');
-          }
-          break;
-        case 'ArrowRight':
-          if (currentDirection !== 'LEFT') {
-            setDirection('RIGHT');
-          }
-          break;
-        case ' ':
-          togglePause();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [gameStarted, togglePause, setDirection, directionRef]);
-
-  // Start game loop when game starts
-  useEffect(() => {
-    if (gameStarted && !isGameOver && !isPaused) {
-      startGameLoop();
-    }
-    
-    return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [gameStarted, isGameOver, isPaused, startGameLoop]);
-
-  // Load high score from localStorage
-  useEffect(() => {
-    const savedHighScore = localStorage.getItem('snakeHighScore');
-    if (savedHighScore) {
-      setHighScore(parseInt(savedHighScore));
-    }
-  }, []);
+  // Initialize direction controls
+  const { handleDirectionClick } = useDirectionControls({
+    gameStarted,
+    directionRef,
+    setDirection
+  });
+  
+  // Initialize keyboard controls
+  useKeyboardControls({
+    gameStarted,
+    directionRef,
+    setDirection,
+    togglePause
+  });
+  
+  // Initialize game loop manager
+  useGameLoopManager({
+    gameStarted,
+    isGameOver,
+    isPaused,
+    startGameLoop,
+    gameLoopRef
+  });
 
   return {
     canvasRef,
