@@ -19,10 +19,34 @@ export const useSnakeGame = () => {
   const [showControls, setShowControls] = useState<boolean>(false);
   const [isSavingScore, setIsSavingScore] = useState<boolean>(false);
   
-  const { snake, setSnake, snakeRef, food, setFood, direction, setDirection, directionRef } = useSnakeMovement();
-  const { score, setScore, highScore, setHighScore, saveScore } = useSnakeScore(isConnected, address, isSavingScore, setIsSavingScore, toast);
+  // Initialize movement-related state first
+  const { 
+    snake, 
+    setSnake, 
+    snakeRef, 
+    food, 
+    setFood, 
+    direction, 
+    setDirection, 
+    directionRef 
+  } = useSnakeMovement();
   
-  // Initialize gameLoopRef here before passing to any hooks
+  // Initialize score-related state and functions
+  const { 
+    score, 
+    setScore, 
+    highScore, 
+    setHighScore, 
+    saveScore 
+  } = useSnakeScore(
+    isConnected, 
+    address, 
+    isSavingScore, 
+    setIsSavingScore, 
+    toast
+  );
+
+  // Initialize gameLoopRef before passing to any hooks
   const gameLoopRef = useRef<number | null>(null);
   
   // Handle game over
@@ -51,7 +75,8 @@ export const useSnakeGame = () => {
     });
   };
 
-  const { gameLoop, startGameLoop } = useSnakeGameLoop({
+  // Initialize game loop
+  const { startGameLoop } = useSnakeGameLoop({
     isGameOver,
     isPaused,
     directionRef,
@@ -65,6 +90,7 @@ export const useSnakeGame = () => {
     handleGameOver
   });
   
+  // Initialize controls after startGameLoop is defined
   const { togglePause, resetGame } = useSnakeControls({
     setSnake,
     snakeRef,

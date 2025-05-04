@@ -10,7 +10,7 @@ interface UseSnakeControlsProps {
   setDirection: (direction: Direction) => void;
   directionRef: React.MutableRefObject<Direction>;
   setIsGameOver: (isGameOver: boolean) => void;
-  setIsPaused: (isPaused: boolean) => void;
+  setIsPaused: (isPaused: boolean | ((prev: boolean) => boolean)) => void;
   setScore: (score: number) => void;
   setGameStarted: (gameStarted: boolean) => void;
   gameLoopRef: React.MutableRefObject<number | null>;
@@ -32,7 +32,7 @@ export const useSnakeControls = ({
   startGameLoop,
   INITIAL_SNAKE
 }: UseSnakeControlsProps) => {
-  // Toggle pause - fixed by using a function directly for setIsPaused
+  // Toggle pause - fixed by updating the type definition of setIsPaused
   const togglePause = useCallback(() => {
     setIsPaused((prev: boolean) => {
       const newPaused = !prev;
