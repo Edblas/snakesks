@@ -3,13 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useWeb3 } from '@/components/Web3Provider';
 import { Direction, Coordinate, INITIAL_SNAKE } from '@/components/snake/types';
+import { generateFood } from '@/components/snake/gameUtils';
 import { useSnakeMovement } from './useSnakeMovement';
 import { useSnakeScore } from './useSnakeScore';
-import { useSnakeControls } from './useSnakeControls';
 import { useSnakeGameLoop } from './useSnakeGameLoop';
+import { useSnakeControls } from './useSnakeControls';
 
 export const useSnakeGame = () => {
-  const { toast } = useToast();
+  const toast = useToast();
   const { isConnected, address } = useWeb3();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
@@ -20,6 +21,9 @@ export const useSnakeGame = () => {
   
   const { snake, setSnake, snakeRef, food, setFood, direction, setDirection, directionRef } = useSnakeMovement();
   const { score, setScore, highScore, setHighScore, saveScore } = useSnakeScore(isConnected, address, isSavingScore, setIsSavingScore, toast);
+  
+  // Initialize gameLoopRef here before passing to any hooks
+  const gameLoopRef = useRef<number | null>(null);
   
   // Handle game over
   const handleGameOver = () => {
@@ -41,11 +45,25 @@ export const useSnakeGame = () => {
       saveScore(score);
     }
 
-    toast({
+    toast.toast({
       title: "Game Over!",
       description: `Your score: ${score}. Watch an ad to earn SKS tokens!`,
     });
   };
+
+  const { gameLoop, startGameLoop } = useSnakeGameLoop({
+    isGameOver,
+    isPaused,
+    directionRef,
+    snakeRef,
+    setSnake,
+    food, 
+    setFood,
+    score,
+    setScore,
+    canvasRef,
+    handleGameOver
+  });
   
   const { togglePause, resetGame } = useSnakeControls({
     setSnake,
@@ -92,20 +110,6 @@ export const useSnakeGame = () => {
     }
   };
 
-  const { gameLoop, gameLoopRef, startGameLoop } = useSnakeGameLoop({
-    isGameOver,
-    isPaused,
-    directionRef,
-    snakeRef,
-    setSnake,
-    food, 
-    setFood,
-    score,
-    setScore,
-    canvasRef,
-    handleGameOver
-  });
-
   // Set up keyboard listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -148,7 +152,7 @@ export const useSnakeGame = () => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gameStarted, togglePause, directionRef, gameLoopRef]);
+  }, [gameStarted, togglePause, setDirection, directionRef]);
 
   // Start game loop when game starts
   useEffect(() => {

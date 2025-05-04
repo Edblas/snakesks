@@ -101,7 +101,8 @@ export const useSnakeGameLoop = ({
     }
     
     // Continue game loop with requestAnimationFrame
-    return requestAnimationFrame(gameLoop);
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+    return gameLoopRef.current;
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
 
   // Start game loop with requestAnimationFrame

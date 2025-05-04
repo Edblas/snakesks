@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Direction, Coordinate, INITIAL_SNAKE } from '@/components/snake/types';
 import { generateFood } from '@/components/snake/gameUtils';
 
@@ -11,14 +11,14 @@ export const useSnakeMovement = () => {
   const directionRef = useRef<Direction>(direction);
   const snakeRef = useRef<Coordinate[]>(snake);
   
-  // Update refs when state changes
-  useState(() => {
+  // Update refs when state changes - fixed by using useEffect instead of useState
+  useEffect(() => {
     directionRef.current = direction;
-  });
+  }, [direction]);
 
-  useState(() => {
+  useEffect(() => {
     snakeRef.current = snake;
-  });
+  }, [snake]);
   
   return {
     snake,

@@ -32,9 +32,9 @@ export const useSnakeControls = ({
   startGameLoop,
   INITIAL_SNAKE
 }: UseSnakeControlsProps) => {
-  // Toggle pause
+  // Toggle pause - fixed by using a function directly for setIsPaused
   const togglePause = useCallback(() => {
-    setIsPaused(prev => {
+    setIsPaused((prev: boolean) => {
       const newPaused = !prev;
       
       if (newPaused) {
@@ -50,7 +50,7 @@ export const useSnakeControls = ({
       
       return newPaused;
     });
-  }, [startGameLoop, gameLoopRef]);
+  }, [startGameLoop, gameLoopRef, setIsPaused]);
   
   // Reset game
   const resetGame = useCallback(() => {

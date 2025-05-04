@@ -1,6 +1,5 @@
 
 import { useState, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useSnakeScore = (
@@ -8,7 +7,7 @@ export const useSnakeScore = (
   address: string | undefined,
   isSavingScore: boolean,
   setIsSavingScore: (value: boolean) => void,
-  toast: ReturnType<typeof useToast>
+  toast: any
 ) => {
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
@@ -28,14 +27,14 @@ export const useSnakeScore = (
       
       if (error) {
         console.error("Error saving score:", error);
-        toast({
+        toast.toast({
           title: "Score not saved",
           description: "There was a problem saving your score.",
           variant: "destructive"
         });
       } else {
         console.log("Score saved successfully");
-        toast({
+        toast.toast({
           title: "Score saved",
           description: "Your score has been added to the leaderboard.",
         });
