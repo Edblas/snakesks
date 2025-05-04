@@ -7,9 +7,11 @@ import GameOverlay from '@/components/snake/GameOverlay';
 import SplashScreen from '@/components/snake/SplashScreen';
 import { useWeb3 } from '@/components/Web3Provider';
 import { GRID_SIZE, CELL_SIZE } from '@/components/snake/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const SnakeGame: React.FC = () => {
   const { isConnected } = useWeb3();
+  const isMobile = useIsMobile();
   const {
     canvasRef,
     score,
@@ -39,12 +41,12 @@ const SnakeGame: React.FC = () => {
         <SplashScreen onStart={handleSplashStart} />
       )}
       
-      <div className="mb-4 flex justify-between w-full max-w-[400px]">
+      <div className="mb-2 flex justify-between w-full max-w-[400px]">
         <div className="text-lg font-bold">Score: <span className="text-game-token">{score}</span></div>
         <div className="text-lg font-bold">High: <span className="text-game-token">{highScore}</span></div>
       </div>
 
-      <div className="relative mb-6">
+      <div className="relative mb-2">
         <canvas
           ref={canvasRef}
           width={GRID_SIZE * CELL_SIZE}
@@ -64,21 +66,24 @@ const SnakeGame: React.FC = () => {
         />
       </div>
 
-      {gameStarted && !isGameOver && (
-        <Button 
-          onClick={togglePause} 
-          className="mb-5 bg-gray-700 hover:bg-gray-600"
-        >
-          {isPaused ? 'Resume' : 'Pause'}
-        </Button>
-      )}
+      <div className="flex flex-col items-center">
+        {gameStarted && !isGameOver && (
+          <Button 
+            onClick={togglePause} 
+            className="mb-2 bg-gray-700 hover:bg-gray-600"
+            size={isMobile ? "sm" : "default"}
+          >
+            {isPaused ? 'Resume' : 'Pause'}
+          </Button>
+        )}
 
-      <GameControls
-        showControls={showControls}
-        setShowControls={setShowControls}
-        gameStarted={gameStarted}
-        handleDirectionClick={handleDirectionClick}
-      />
+        <GameControls
+          showControls={showControls}
+          setShowControls={setShowControls}
+          gameStarted={gameStarted}
+          handleDirectionClick={handleDirectionClick}
+        />
+      </div>
     </div>
   );
 };
