@@ -18,6 +18,7 @@ export const useSnakeGame = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [isSavingScore, setIsSavingScore] = useState<boolean>(false);
+  const [showSplash, setShowSplash] = useState<boolean>(true);
   
   // Initialize movement-related state first
   const { 
@@ -218,5 +219,7 @@ export const useSnakeGame = () => {
     resetGame,
     togglePause,
     handleDirectionClick,
+    showSplash,
+    setShowSplash,
   };
 };

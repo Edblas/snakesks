@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useSnakeGame } from '@/hooks/snake/useSnakeGame';
 import GameControls from '@/components/snake/GameControls';
 import GameOverlay from '@/components/snake/GameOverlay';
+import SplashScreen from '@/components/snake/SplashScreen';
 import { useWeb3 } from '@/components/Web3Provider';
 import { GRID_SIZE, CELL_SIZE } from '@/components/snake/types';
 
@@ -22,10 +23,22 @@ const SnakeGame: React.FC = () => {
     resetGame,
     togglePause,
     handleDirectionClick,
+    showSplash,
+    setShowSplash,
   } = useSnakeGame();
+
+  // Handle splash screen start
+  const handleSplashStart = () => {
+    setShowSplash(false);
+    resetGame();
+  };
 
   return (
     <div className="flex flex-col items-center">
+      {showSplash && (
+        <SplashScreen onStart={handleSplashStart} />
+      )}
+      
       <div className="mb-4 flex justify-between w-full max-w-[400px]">
         <div className="text-lg font-bold">Score: <span className="text-game-token">{score}</span></div>
         <div className="text-lg font-bold">High: <span className="text-game-token">{highScore}</span></div>

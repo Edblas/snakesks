@@ -12,7 +12,7 @@ const Reward = () => {
   const [adWatched, setAdWatched] = useState(false);
   const [tokensClaimed, setTokensClaimed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [countdown, setCountdown] = useState(15); // Increased countdown for mandatory viewing
+  const [countdown, setCountdown] = useState(15); 
   const [isAdVisible, setIsAdVisible] = useState(true);
   
   // Simulate ad loading and watching with mandatory viewing
@@ -60,15 +60,7 @@ const Reward = () => {
     navigate('/');
   };
 
-  const skipAd = () => {
-    // Navigate back without claiming tokens
-    navigate('/');
-    toast({
-      title: "Ad skipped",
-      description: "You must watch the ad to claim tokens.",
-      variant: "destructive"
-    });
-  };
+  // Removed skipAd function since ad viewing is now mandatory
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
@@ -86,7 +78,7 @@ const Reward = () => {
             </div>
             <p className="text-sm text-gray-400">
               {!adWatched 
-                ? "Please wait until the ad is complete. Skipping will forfeit your tokens." 
+                ? "Please wait until the ad is complete to earn tokens." 
                 : "Thanks for watching!"}
             </p>
           </div>
@@ -122,16 +114,6 @@ const Reward = () => {
           >
             Play Again
           </Button>
-          
-          {!adWatched && (
-            <Button
-              variant="ghost"
-              onClick={skipAd}
-              className="w-full text-gray-400 hover:text-white hover:bg-gray-800"
-            >
-              Skip (No Tokens)
-            </Button>
-          )}
         </div>
       </div>
       
