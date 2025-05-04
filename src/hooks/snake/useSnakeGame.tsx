@@ -76,7 +76,7 @@ export const useSnakeGame = () => {
   };
 
   // Initialize game loop
-  const { startGameLoop } = useSnakeGameLoop({
+  const { startGameLoop, resetSpeed } = useSnakeGameLoop({
     isGameOver,
     isPaused,
     directionRef,
@@ -103,6 +103,7 @@ export const useSnakeGame = () => {
     setGameStarted,
     gameLoopRef,
     startGameLoop,
+    resetSpeed,  // Passando a nova função
     INITIAL_SNAKE
   });
   
