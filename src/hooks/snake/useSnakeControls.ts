@@ -11,13 +11,15 @@ interface UseSnakeControlsProps {
   directionRef: React.MutableRefObject<Direction>;
   setIsGameOver: (isGameOver: boolean) => void;
   setIsPaused: (isPaused: boolean | ((prev: boolean) => boolean)) => void;
-  isPaused: boolean; // Current pause state
+  togglePause: () => void; // Use the new togglePause function
+  isPaused: boolean;
   setScore: (score: number) => void;
   setGameStarted: (gameStarted: boolean) => void;
   gameLoopRef: React.MutableRefObject<number | null>;
   startGameLoop: () => void;
   resetSpeed: () => void;
   INITIAL_SNAKE: Coordinate[];
+  resetGameState: () => void; // Use the new resetGameState function
 }
 
 export const useSnakeControls = ({
@@ -28,62 +30,64 @@ export const useSnakeControls = ({
   directionRef,
   setIsGameOver,
   setIsPaused,
-  isPaused, // Current pause state
+  togglePause,
+  isPaused,
   setScore,
   setGameStarted,
   gameLoopRef,
   startGameLoop,
   resetSpeed,
-  INITIAL_SNAKE
+  INITIAL_SNAKE,
+  resetGameState
 }: UseSnakeControlsProps) => {
-  // Toggle pause with improved handling to ensure game loop stops/starts correctly
-  const togglePause = useCallback(() => {
-    setIsPaused((prev: boolean) => {
-      const newPausedState = !prev;
-      
-      // When pausing the game
-      if (newPausedState) {
-        // Cancel animation frame when paused
-        if (gameLoopRef.current !== null) {
-          cancelAnimationFrame(gameLoopRef.current);
-          gameLoopRef.current = null;
-        }
-      } else {
-        // Start animation frame when resumed (if game loop ref is null)
-        if (gameLoopRef.current === null) {
-          startGameLoop();
-        }
+  // Handle pause toggle with proper animation frame management
+  const handleTogglePause = useCallback(() => {
+    togglePause();
+    
+    // If we're unpausing, restart the game loop
+    if (isPaused) {
+      startGameLoop();
+    } else {
+      // If we're pausing, cancel the animation frame
+      if (gameLoopRef.current !== null) {
+        cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
       }
-      
-      return newPausedState;
-    });
-  }, [startGameLoop, gameLoopRef, setIsPaused]);
+    }
+  }, [togglePause, isPaused, startGameLoop, gameLoopRef]);
   
-  // Reset game
+  // Reset game with better state management
   const resetGame = useCallback(() => {
+    // Cancel any existing game loop
+    if (gameLoopRef.current !== null) {
+      cancelAnimationFrame(gameLoopRef.current);
+      gameLoopRef.current = null;
+    }
+    
+    // Reset game state using the new function
+    resetGameState();
+    
+    // Reset gameplay elements
     setSnake(INITIAL_SNAKE);
     snakeRef.current = INITIAL_SNAKE;
     setFood(generateFood(INITIAL_SNAKE));
     setDirection('UP');
     directionRef.current = 'UP';
-    setIsGameOver(false);
-    setIsPaused(false);
     setScore(0);
-    setGameStarted(true);
     resetSpeed();
-    
-    if (gameLoopRef.current) {
-      cancelAnimationFrame(gameLoopRef.current);
-    }
     
     // Start with a slight delay to allow state updates
     setTimeout(() => {
       startGameLoop();
     }, 50);
-  }, [startGameLoop, setSnake, snakeRef, setFood, setDirection, directionRef, setIsGameOver, setIsPaused, setScore, setGameStarted, gameLoopRef, resetSpeed, INITIAL_SNAKE]);
+  }, [
+    gameLoopRef, resetGameState, setSnake, snakeRef, setFood, 
+    setDirection, directionRef, setScore, resetSpeed, 
+    INITIAL_SNAKE, startGameLoop
+  ]);
   
   return {
-    togglePause,
+    togglePause: handleTogglePause,
     resetGame,
   };
 };

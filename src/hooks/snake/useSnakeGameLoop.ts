@@ -1,4 +1,3 @@
-
 import { useRef, useCallback, useEffect } from 'react';
 import { Coordinate, GRID_SIZE } from '@/components/snake/types';
 import { generateFood, drawGame } from '@/components/snake/gameUtils';
@@ -32,20 +31,21 @@ export const useSnakeGameLoop = ({
 }: UseSnakeGameLoopProps) => {
   const gameLoopRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
-  // Define interval between updates (milliseconds) - higher = slower game
-  const updateInterval = useRef<number>(200); // 200ms = reduced speed
+  // Base speed - higher value = slower game
+  const updateInterval = useRef<number>(150); // Slightly faster default speed
   
   // Optimized game loop with requestAnimationFrame and speed control
   const gameLoop = useCallback((timestamp: number) => {
-    // Check for paused state immediately and return if paused
+    // IMPORTANT: If game is over or paused, don't continue the loop
     if (isGameOver || isPaused) {
-      return null;
+      gameLoopRef.current = null;
+      return;
     }
     
-    // Controle de velocidade baseado no tempo
+    // Time-based speed control
     const elapsed = timestamp - lastUpdateTimeRef.current;
     
-    // Só atualiza a posição da cobra se passou tempo suficiente desde a última atualização
+    // Only update snake position if enough time has passed
     if (elapsed >= updateInterval.current) {
       lastUpdateTimeRef.current = timestamp;
       
@@ -77,13 +77,13 @@ export const useSnakeGameLoop = ({
         head.y >= GRID_SIZE
       ) {
         handleGameOver();
-        return null;
+        return;
       }
       
       // Check for collisions with self
       if (currentSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
         handleGameOver();
-        return null;
+        return;
       }
       
       // Create new snake array
@@ -98,43 +98,41 @@ export const useSnakeGameLoop = ({
         // Generate new food
         setFood(generateFood(newSnake));
         
-        // Diminui levemente o intervalo (aumenta um pouco a velocidade) quando a cobra cresce
-        // Com um limite mínimo para não ficar muito rápido
-        updateInterval.current = Math.max(120, updateInterval.current - 5);
-        
-        // Don't remove tail (snake grows)
+        // Increase speed slightly when snake grows
+        // Minimum speed limit to keep game playable
+        updateInterval.current = Math.max(80, updateInterval.current - 3);
       } else {
-        // Remove tail
+        // Remove tail if no food was eaten
         newSnake.pop();
       }
       
-      // Update snake with batched state update
+      // Update snake state
       setSnake(newSnake);
       snakeRef.current = newSnake;
       
-      // Draw game
+      // Draw game (only if canvas exists)
       if (canvasRef.current) {
         drawGame(canvasRef, newSnake, food);
       }
     }
     
-    // Continue game loop with requestAnimationFrame only if not paused or game over
+    // Continue game loop only if not paused or game over
     if (!isPaused && !isGameOver) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
+    } else {
+      gameLoopRef.current = null;
     }
-    
-    return gameLoopRef.current;
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
 
-  // Start game loop with requestAnimationFrame
+  // Start game loop
   const startGameLoop = useCallback(() => {
-    // Clear any existing animation frame first
-    if (gameLoopRef.current) {
+    // Cancel any existing animation frame first
+    if (gameLoopRef.current !== null) {
       cancelAnimationFrame(gameLoopRef.current);
       gameLoopRef.current = null;
     }
     
-    // Only start the game loop if the game is not paused and not game over
+    // Only start if game is active
     if (!isPaused && !isGameOver) {
       lastUpdateTimeRef.current = performance.now();
       gameLoopRef.current = requestAnimationFrame(gameLoop);
@@ -143,7 +141,7 @@ export const useSnakeGameLoop = ({
 
   // Reset speed when game restarts
   const resetSpeed = useCallback(() => {
-    updateInterval.current = 200;
+    updateInterval.current = 150; // Reset to default speed
   }, []);
   
   return {
