@@ -10,6 +10,7 @@ import Reward from "./pages/Reward";
 import TopScores from "./pages/TopScores";
 import NotFound from "./pages/NotFound";
 import Rewards from "./pages/Rewards";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/reward" element={<Reward />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/top-scores" element={<TopScores />} />
+            <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

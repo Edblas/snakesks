@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useSnakeGame } from '@/hooks/snake/useSnakeGame';
 import GameControls from '@/components/snake/GameControls';
@@ -66,11 +66,11 @@ const SnakeGame: React.FC = () => {
         />
       </div>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-1">
         {gameStarted && !isGameOver && (
           <Button 
-            onClick={togglePause} 
-            className="mb-2 bg-gray-700 hover:bg-gray-600"
+            onClick={() => togglePause()}
+            className="mb-1 bg-gray-700 hover:bg-gray-600"
             size={isMobile ? "sm" : "default"}
           >
             {isPaused ? 'Resume' : 'Pause'}

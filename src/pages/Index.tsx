@@ -1,11 +1,9 @@
 
 import { Button } from '@/components/ui/button';
 import SnakeGame from '@/components/SnakeGame';
-import Leaderboard from '@/components/Leaderboard';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '@/components/Web3Provider';
-import { Trophy } from 'lucide-react';
+import { Trophy, Info } from 'lucide-react';
 
 const Index = () => {
   const { connectWallet, isConnected, isConnecting, tokenBalance, address } = useWeb3();
@@ -22,7 +20,7 @@ const Index = () => {
           <h1 className="text-2xl font-bold text-game-token">Snake <span className="text-white">Arcade</span></h1>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           {isConnected && (
             <div className="hidden sm:block text-sm bg-gray-800 rounded-full px-3 py-1">
               <span className="text-gray-400">Balance:</span> <span className="text-game-token font-semibold">{tokenBalance} SKS</span>
@@ -33,37 +31,46 @@ const Index = () => {
             onClick={handleConnectWallet}
             disabled={isConnecting}
             className={`text-sm ${isConnected ? 'bg-green-600' : 'bg-game-token'} hover:bg-opacity-90`}
+            size="sm"
           >
-            {isConnecting ? 'Connecting...' : isConnected ? 'Wallet Connected' : 'Connect Wallet'}
+            {isConnecting ? 'Connecting...' : isConnected ? 'Connected' : 'Connect'}
           </Button>
           
           {isConnected && (
             <Button
               onClick={() => navigate('/rewards')}
               className="text-sm bg-yellow-600 hover:bg-yellow-700"
+              size="sm"
             >
-              My Rewards
+              Rewards
             </Button>
           )}
         </div>
       </header>
 
-      <main className="w-full max-w-3xl flex flex-col lg:flex-row items-start justify-center gap-8 px-4">
-        <div className="w-full lg:w-auto">
+      <main className="w-full max-w-3xl flex flex-col items-center justify-center px-4">
+        <div className="w-full flex justify-center">
           <SnakeGame />
         </div>
         
-        <div className="w-full lg:w-auto mt-8 lg:mt-0">
-          <Leaderboard />
-          <div className="mt-4 text-center">
-            <Button 
-              onClick={() => navigate('/top-scores')} 
-              variant="outline" 
-              className="border-gray-700 text-white hover:bg-gray-800 w-full flex items-center justify-center"
-            >
-              <Trophy className="mr-2 h-4 w-4" /> View All Top Scores
-            </Button>
-          </div>
+        <div className="mt-6 flex gap-3 justify-center">
+          <Button 
+            onClick={() => navigate('/top-scores')} 
+            variant="outline" 
+            className="border-gray-700 text-white hover:bg-gray-800 flex items-center justify-center"
+            size="sm"
+          >
+            <Trophy className="mr-2 h-4 w-4" /> Top Scores
+          </Button>
+          
+          <Button 
+            onClick={() => navigate('/about')} 
+            variant="outline" 
+            className="border-gray-700 text-white hover:bg-gray-800 flex items-center justify-center"
+            size="sm"
+          >
+            <Info className="mr-2 h-4 w-4" /> About SKS
+          </Button>
         </div>
       </main>
 
