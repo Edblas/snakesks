@@ -32,8 +32,8 @@ export const useSnakeGameLoop = ({
 }: UseSnakeGameLoopProps) => {
   const gameLoopRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
-  // Define o intervalo entre atualizações (milissegundos) - quanto maior, mais lento o jogo
-  const updateInterval = useRef<number>(200); // 200ms = velocidade reduzida
+  // Define interval between updates (milliseconds) - higher = slower game
+  const updateInterval = useRef<number>(200); // 200ms = reduced speed
   
   // Optimized game loop with requestAnimationFrame and speed control
   const gameLoop = useCallback((timestamp: number) => {
@@ -134,14 +134,14 @@ export const useSnakeGameLoop = ({
       gameLoopRef.current = null;
     }
     
-    // Only start the game loop if the game is not paused
+    // Only start the game loop if the game is not paused and not game over
     if (!isPaused && !isGameOver) {
       lastUpdateTimeRef.current = performance.now();
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
   }, [gameLoop, isPaused, isGameOver]);
 
-  // Resetar velocidade quando o jogo reinicia
+  // Reset speed when game restarts
   const resetSpeed = useCallback(() => {
     updateInterval.current = 200;
   }, []);

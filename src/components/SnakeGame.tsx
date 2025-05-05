@@ -10,6 +10,10 @@ import { GRID_SIZE, CELL_SIZE } from '@/components/snake/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Pause, Play } from 'lucide-react';
 
+// Define a smaller size for the game board
+const GAME_SCALE = 0.8; // 80% of the original size
+const SCALED_CELL_SIZE = Math.floor(CELL_SIZE * GAME_SCALE);
+
 const SnakeGame: React.FC = () => {
   const { isConnected } = useWeb3();
   const isMobile = useIsMobile();
@@ -42,7 +46,7 @@ const SnakeGame: React.FC = () => {
         <SplashScreen onStart={handleSplashStart} />
       )}
       
-      <div className="mb-2 flex justify-between w-full max-w-[400px]">
+      <div className="mb-2 flex justify-between w-full max-w-[320px]">
         <div className="text-lg font-bold">Score: <span className="text-game-token">{score}</span></div>
         <div className="text-lg font-bold">High: <span className="text-game-token">{highScore}</span></div>
       </div>
@@ -50,8 +54,8 @@ const SnakeGame: React.FC = () => {
       <div className="relative mb-2">
         <canvas
           ref={canvasRef}
-          width={GRID_SIZE * CELL_SIZE}
-          height={GRID_SIZE * CELL_SIZE}
+          width={GRID_SIZE * SCALED_CELL_SIZE}
+          height={GRID_SIZE * SCALED_CELL_SIZE}
           className="border-2 border-gray-700 rounded-md"
           style={{ imageRendering: 'pixelated' }}
         />
