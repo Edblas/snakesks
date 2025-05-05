@@ -82,7 +82,7 @@ export const useSnakeGame = () => {
     handleGameOver
   });
   
-  // Initialize controls
+  // Initialize controls - passing isPaused state
   const { togglePause, resetGame } = useSnakeControls({
     setSnake,
     snakeRef,
@@ -91,6 +91,7 @@ export const useSnakeGame = () => {
     directionRef,
     setIsGameOver,
     setIsPaused,
+    isPaused, // Pass the current isPaused state
     setScore,
     setGameStarted,
     gameLoopRef,

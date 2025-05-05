@@ -8,6 +8,7 @@ import SplashScreen from '@/components/snake/SplashScreen';
 import { useWeb3 } from '@/components/Web3Provider';
 import { GRID_SIZE, CELL_SIZE } from '@/components/snake/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Pause, Play } from 'lucide-react';
 
 const SnakeGame: React.FC = () => {
   const { isConnected } = useWeb3();
@@ -69,10 +70,11 @@ const SnakeGame: React.FC = () => {
       <div className="flex flex-col items-center gap-1">
         {gameStarted && !isGameOver && (
           <Button 
-            onClick={() => togglePause()}
+            onClick={togglePause}
             className="mb-1 bg-gray-700 hover:bg-gray-600"
             size={isMobile ? "sm" : "default"}
           >
+            {isPaused ? <Play className="mr-1" /> : <Pause className="mr-1" />}
             {isPaused ? 'Resume' : 'Pause'}
           </Button>
         )}

@@ -11,11 +11,12 @@ interface UseSnakeControlsProps {
   directionRef: React.MutableRefObject<Direction>;
   setIsGameOver: (isGameOver: boolean) => void;
   setIsPaused: (isPaused: boolean | ((prev: boolean) => boolean)) => void;
+  isPaused: boolean; // Add access to current pause state
   setScore: (score: number) => void;
   setGameStarted: (gameStarted: boolean) => void;
   gameLoopRef: React.MutableRefObject<number | null>;
   startGameLoop: () => void;
-  resetSpeed: () => void;  // Nova propriedade adicionada
+  resetSpeed: () => void;
   INITIAL_SNAKE: Coordinate[];
 }
 
@@ -27,18 +28,20 @@ export const useSnakeControls = ({
   directionRef,
   setIsGameOver,
   setIsPaused,
+  isPaused, // Add current pause state
   setScore,
   setGameStarted,
   gameLoopRef,
   startGameLoop,
-  resetSpeed,  // Nova propriedade adicionada
+  resetSpeed,
   INITIAL_SNAKE
 }: UseSnakeControlsProps) => {
-  // Toggle pause - fixed by updating the type definition of setIsPaused
+  // Toggle pause - improved to better handle the pause state
   const togglePause = useCallback(() => {
     setIsPaused((prev: boolean) => {
       const newPaused = !prev;
       
+      // When pausing the game
       if (newPaused) {
         // Cancel animation frame when paused
         if (gameLoopRef.current) {
@@ -65,7 +68,7 @@ export const useSnakeControls = ({
     setIsPaused(false);
     setScore(0);
     setGameStarted(true);
-    resetSpeed();  // Resetar a velocidade quando o jogo reiniciar
+    resetSpeed();
     
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);

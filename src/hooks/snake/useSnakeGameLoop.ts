@@ -37,7 +37,10 @@ export const useSnakeGameLoop = ({
   
   // Optimized game loop with requestAnimationFrame and speed control
   const gameLoop = useCallback((timestamp: number) => {
-    if (isGameOver || isPaused) return null;
+    // Check for paused state immediately and return if paused
+    if (isGameOver || isPaused) {
+      return null;
+    }
     
     // Controle de velocidade baseado no tempo
     const elapsed = timestamp - lastUpdateTimeRef.current;
@@ -115,20 +118,28 @@ export const useSnakeGameLoop = ({
       }
     }
     
-    // Continue game loop with requestAnimationFrame
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
+    // Continue game loop with requestAnimationFrame only if not paused or game over
+    if (!isPaused && !isGameOver) {
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    }
+    
     return gameLoopRef.current;
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
 
   // Start game loop with requestAnimationFrame
   const startGameLoop = useCallback(() => {
+    // Clear any existing animation frame first
     if (gameLoopRef.current) {
       cancelAnimationFrame(gameLoopRef.current);
+      gameLoopRef.current = null;
     }
     
-    lastUpdateTimeRef.current = performance.now();
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameLoop]);
+    // Only start the game loop if the game is not paused
+    if (!isPaused && !isGameOver) {
+      lastUpdateTimeRef.current = performance.now();
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    }
+  }, [gameLoop, isPaused, isGameOver]);
 
   // Resetar velocidade quando o jogo reinicia
   const resetSpeed = useCallback(() => {
