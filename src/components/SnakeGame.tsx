@@ -25,13 +25,12 @@ const SnakeGame: React.FC = () => {
     isPaused,
     gameStarted,
     showControls,
-    setShowControls,
-    isSavingScore,
-    resetGame,
-    togglePause,
     handleDirectionClick,
     showSplash,
     setShowSplash,
+    isSavingScore,
+    resetGame,
+    togglePause,
   } = useSnakeGame();
 
   // Handle splash screen start
@@ -84,8 +83,6 @@ const SnakeGame: React.FC = () => {
         )}
 
         <GameControls
-          showControls={showControls}
-          setShowControls={setShowControls}
           gameStarted={gameStarted}
           handleDirectionClick={handleDirectionClick}
         />

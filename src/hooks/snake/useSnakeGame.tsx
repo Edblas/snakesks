@@ -26,7 +26,6 @@ export const useSnakeGame = () => {
     isGameOver, setIsGameOver,
     isPaused, setIsPaused,
     gameStarted, setGameStarted,
-    showControls, setShowControls,
     isSavingScore, setIsSavingScore
   } = useGameState();
   
@@ -133,8 +132,7 @@ export const useSnakeGame = () => {
     isPaused,
     score,
     highScore,
-    showControls,
-    setShowControls,
+    showControls: true, // Always return true here to always show controls
     gameStarted,
     isSavingScore,
     resetGame,
