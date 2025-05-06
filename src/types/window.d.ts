@@ -6,4 +6,8 @@ interface Window {
     on: (eventName: string, callback: (...args: any[]) => void) => void;
     removeListener: (eventName: string, callback: (...args: any[]) => void) => void;
   };
+  Capacitor?: {
+    isNative: boolean;
+    getPlatform: () => string;
+  };
 }

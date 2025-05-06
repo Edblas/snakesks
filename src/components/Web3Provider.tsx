@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { ethers } from 'ethers';
 import { SKS_TOKEN_CONFIG, getTokenContract, formatTokenBalance, meetsMinimumWithdrawal } from '@/utils/tokenContract';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Web3ContextType = {
   address: string | null;
@@ -33,6 +34,7 @@ interface Web3ProviderProps {
 
 export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [address, setAddress] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0');
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -44,6 +46,11 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
   // Check if MetaMask is installed
   const isMetaMaskInstalled = () => {
     return typeof window !== 'undefined' && window.ethereum !== undefined;
+  };
+
+  // Check if we're running in a mobile app context
+  const isCapacitorApp = () => {
+    return typeof (window as any)?.Capacitor !== 'undefined';
   };
 
   // Initialize provider and token contract
@@ -139,12 +146,50 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Open MetaMask app on mobile devices
+  const connectMobileWallet = async () => {
+    try {
+      setIsConnecting(true);
+      
+      // Create the deep link to MetaMask
+      const metamaskAppDeepLink = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}`;
+      
+      // Open MetaMask app
+      window.location.href = metamaskAppDeepLink;
+      
+      toast({
+        title: "Opening MetaMask",
+        description: "The MetaMask app will open. Please approve the connection.",
+      });
+      
+      // Note: We can't track connection status here since the app will be redirected
+      // The user will need to return to the app manually after connecting
+    } catch (error) {
+      console.error("Failed to connect mobile wallet:", error);
+      toast({
+        title: "Connection failed",
+        description: "Failed to open MetaMask. Please make sure MetaMask is installed.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   // Connect wallet function
   const connectWallet = async () => {
+    // For mobile devices in Capacitor app, use the mobile-specific connection method
+    if (isMobile && isCapacitorApp()) {
+      return connectMobileWallet();
+    }
+    
+    // For web browsers with MetaMask extension
     if (!isMetaMaskInstalled()) {
       toast({
         title: "MetaMask not detected",
-        description: "Please install MetaMask to connect your wallet.",
+        description: isMobile 
+          ? "Please install the MetaMask app to connect your wallet."
+          : "Please install MetaMask extension to connect your wallet.",
         variant: "destructive",
       });
       return;
