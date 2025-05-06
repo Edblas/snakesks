@@ -16,15 +16,25 @@ export const useGameLoopManager = ({
   startGameLoop,
   gameLoopRef
 }: UseGameLoopManagerProps) => {
-  // Start game loop when game starts
+  // Start game loop when game starts and ensure proper cleanup
   useEffect(() => {
+    let timeoutId: number | null = null;
+    
     if (gameStarted && !isGameOver && !isPaused) {
-      startGameLoop();
+      // Short timeout to ensure state is fully updated
+      timeoutId = window.setTimeout(() => {
+        startGameLoop();
+      }, 10);
     }
     
     return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
       }
     };
   }, [gameStarted, isGameOver, isPaused, startGameLoop, gameLoopRef]);

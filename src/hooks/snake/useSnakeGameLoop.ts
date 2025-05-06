@@ -32,13 +32,16 @@ export const useSnakeGameLoop = ({
   const gameLoopRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
   // Base speed - higher value = slower game
-  const updateInterval = useRef<number>(150); // Slightly faster default speed
+  const updateInterval = useRef<number>(150); // Default speed
   
   // Optimized game loop with requestAnimationFrame and speed control
   const gameLoop = useCallback((timestamp: number) => {
-    // IMPORTANT: If game is over or paused, don't continue the loop
+    // Stop the loop if game is over or paused
     if (isGameOver || isPaused) {
-      gameLoopRef.current = null;
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
+      }
       return;
     }
     
@@ -116,20 +119,17 @@ export const useSnakeGameLoop = ({
       }
     }
     
-    // Continue game loop only if not paused or game over
+    // Continue game loop
     if (!isPaused && !isGameOver) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
-    } else {
-      gameLoopRef.current = null;
     }
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
 
-  // Start game loop
+  // Start game loop with improved management
   const startGameLoop = useCallback(() => {
     // Cancel any existing animation frame first
     if (gameLoopRef.current !== null) {
       cancelAnimationFrame(gameLoopRef.current);
-      gameLoopRef.current = null;
     }
     
     // Only start if game is active

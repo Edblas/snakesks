@@ -11,7 +11,7 @@ interface UseSnakeControlsProps {
   directionRef: React.MutableRefObject<Direction>;
   setIsGameOver: (isGameOver: boolean) => void;
   setIsPaused: (isPaused: boolean | ((prev: boolean) => boolean)) => void;
-  togglePause: () => void; // Use the new togglePause function
+  togglePause: () => void;
   isPaused: boolean;
   setScore: (score: number) => void;
   setGameStarted: (gameStarted: boolean) => void;
@@ -19,7 +19,7 @@ interface UseSnakeControlsProps {
   startGameLoop: () => void;
   resetSpeed: () => void;
   INITIAL_SNAKE: Coordinate[];
-  resetGameState: () => void; // Use the new resetGameState function
+  resetGameState: () => void;
 }
 
 export const useSnakeControls = ({
@@ -42,18 +42,23 @@ export const useSnakeControls = ({
 }: UseSnakeControlsProps) => {
   // Handle pause toggle with proper animation frame management
   const handleTogglePause = useCallback(() => {
+    // First toggle the pause state
     togglePause();
-    
-    // If we're unpausing, restart the game loop
-    if (isPaused) {
-      startGameLoop();
-    } else {
-      // If we're pausing, cancel the animation frame
-      if (gameLoopRef.current !== null) {
-        cancelAnimationFrame(gameLoopRef.current);
-        gameLoopRef.current = null;
+
+    // Use setTimeout to ensure state is updated before checking isPaused
+    setTimeout(() => {
+      // If we're unpausing (currently paused, about to be unpaused)
+      if (isPaused) {
+        // Start the game loop again
+        startGameLoop();
+      } else {
+        // If we're pausing, cancel the animation frame
+        if (gameLoopRef.current !== null) {
+          cancelAnimationFrame(gameLoopRef.current);
+          gameLoopRef.current = null;
+        }
       }
-    }
+    }, 0);
   }, [togglePause, isPaused, startGameLoop, gameLoopRef]);
   
   // Reset game with better state management
