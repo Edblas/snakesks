@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSnakeGame } from '@/hooks/snake/useSnakeGame';
 import GameControls from '@/components/snake/GameControls';
@@ -10,8 +10,8 @@ import { GRID_SIZE, CELL_SIZE } from '@/components/snake/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Pause, Play } from 'lucide-react';
 
-// Define a smaller size for the game board
-const GAME_SCALE = 0.8; // 80% of the original size
+// Define um tamanho menor para o jogo em dispositivos móveis
+const GAME_SCALE = 0.8; // 80% do tamanho original
 const SCALED_CELL_SIZE = Math.floor(CELL_SIZE * GAME_SCALE);
 
 const SnakeGame: React.FC = () => {
@@ -32,6 +32,21 @@ const SnakeGame: React.FC = () => {
     resetGame,
     togglePause,
   } = useSnakeGame();
+
+  // Prevent scrolling on mobile when playing
+  useEffect(() => {
+    const preventScroll = (e: TouchEvent) => {
+      if (gameStarted && !isGameOver) {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('touchmove', preventScroll, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchmove', preventScroll);
+    };
+  }, [gameStarted, isGameOver]);
 
   // Handle splash screen start
   const handleSplashStart = () => {
