@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export const useGameState = () => {
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
@@ -7,29 +7,56 @@ export const useGameState = () => {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [isSavingScore, setIsSavingScore] = useState<boolean>(false);
   
+  // Reference to track state changes
+  const stateRef = useRef({
+    isGameOver: false,
+    isPaused: false
+  });
+  
+  // Safe setter for isGameOver that updates the ref too
+  const setIsGameOverSafe = useCallback((value: boolean) => {
+    stateRef.current.isGameOver = value;
+    setIsGameOver(value);
+  }, []);
+  
+  // Safe setter for isPaused that updates the ref too
+  const setIsPausedSafe = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    if (typeof value === 'function') {
+      setIsPaused(prev => {
+        const newValue = value(prev);
+        stateRef.current.isPaused = newValue;
+        return newValue;
+      });
+    } else {
+      stateRef.current.isPaused = value;
+      setIsPaused(value);
+    }
+  }, []);
+  
   // Create a more reliable pause toggle function
   const togglePause = useCallback(() => {
-    setIsPaused(prev => !prev);
-  }, []);
+    setIsPausedSafe(prev => !prev);
+  }, [setIsPausedSafe]);
   
   // Create a clear reset function
   const resetGameState = useCallback(() => {
-    setIsGameOver(false);
-    setIsPaused(false);
+    setIsGameOverSafe(false);
+    setIsPausedSafe(false);
     setGameStarted(true);
     setIsSavingScore(false);
-  }, []);
+  }, [setIsGameOverSafe, setIsPausedSafe]);
   
   return {
     isGameOver,
-    setIsGameOver,
+    setIsGameOver: setIsGameOverSafe,
     isPaused,
-    setIsPaused,
+    setIsPaused: setIsPausedSafe,
     togglePause,
     gameStarted,
     setGameStarted,
     isSavingScore,
     setIsSavingScore,
-    resetGameState
+    resetGameState,
+    stateRef // Export the ref for direct state access
   };
 };

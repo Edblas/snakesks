@@ -15,19 +15,37 @@ export const generateFood = (snake: Coordinate[]): Coordinate => {
     segment.x === newFood.x && segment.y === newFood.y
   );
   
-  // Garantir que a comida não apareça sobre a cobra
+  // Ensure the food doesn't appear on the snake
   let attempts = 0;
-  while (isOnSnake && attempts < 100) {
+  const maxAttempts = 100;
+  
+  while (isOnSnake && attempts < maxAttempts) {
     newFood = {
       x: Math.floor(Math.random() * GRID_SIZE),
       y: Math.floor(Math.random() * GRID_SIZE)
     };
+    
     isOnSnake = snake.some(segment => 
       segment.x === newFood.x && segment.y === newFood.y
     );
+    
     attempts++;
   }
   
+  // Safety check - if we couldn't find a valid position after many attempts
+  if (attempts >= maxAttempts) {
+    console.warn("Couldn't find valid food position after many attempts");
+    // Try more aggressively with different coordinates
+    for (let x = 0; x < GRID_SIZE; x++) {
+      for (let y = 0; y < GRID_SIZE; y++) {
+        if (!snake.some(segment => segment.x === x && segment.y === y)) {
+          return { x, y };
+        }
+      }
+    }
+  }
+  
+  console.log("Food generated at:", newFood);
   return newFood;
 };
 
@@ -66,8 +84,9 @@ export const drawGame = (
   
   ctx.stroke();
   
-  // Draw food - garantir que a comida seja desenhada corretamente
-  if (food && typeof food.x === 'number' && typeof food.y === 'number') {
+  // Draw food with additional validation
+  if (food && typeof food.x === 'number' && typeof food.y === 'number' &&
+      food.x >= 0 && food.x < 20 && food.y >= 0 && food.y < 20) {
     ctx.fillStyle = '#F97316';
     ctx.beginPath();
     ctx.arc(
@@ -79,7 +98,7 @@ export const drawGame = (
     );
     ctx.fill();
   } else {
-    console.warn('Food position is invalid:', food);
+    console.warn('Invalid food position:', food);
   }
   
   // Draw snake - use a simpler rendering method for better performance
