@@ -35,8 +35,16 @@ export const useSnakeGameLoop = ({
   // Base speed - higher value = slower game
   const updateInterval = useRef<number>(150); // Default speed
   
+  // Referência para controlar se o jogo já terminou
+  const gameOverCalledRef = useRef<boolean>(false);
+  
   // Optimized game loop with requestAnimationFrame and speed control
   const gameLoop = useCallback((timestamp: number) => {
+    // Limpar referência de game over ao reiniciar
+    if (!isGameOver && gameOverCalledRef.current) {
+      gameOverCalledRef.current = false;
+    }
+    
     // Stop the loop if game is over or paused
     if (isGameOver || isPaused) {
       if (gameLoopRef.current) {
@@ -81,19 +89,25 @@ export const useSnakeGameLoop = ({
         head.y >= GRID_SIZE
       ) {
         // Garantir que o gameOver é chamado apenas uma vez
-        cancelAnimationFrame(gameLoopRef.current);
-        gameLoopRef.current = null;
-        handleGameOver();
+        if (!gameOverCalledRef.current) {
+          gameOverCalledRef.current = true;
+          cancelAnimationFrame(gameLoopRef.current);
+          gameLoopRef.current = null;
+          handleGameOver();
+        }
         return;
       }
       
       // Check for collisions with self
-      for (let i = 0; i < currentSnake.length; i++) {
+      for (let i = 1; i < currentSnake.length; i++) {
         if (currentSnake[i].x === head.x && currentSnake[i].y === head.y) {
           // Garantir que o gameOver é chamado apenas uma vez
-          cancelAnimationFrame(gameLoopRef.current);
-          gameLoopRef.current = null;
-          handleGameOver();
+          if (!gameOverCalledRef.current) {
+            gameOverCalledRef.current = true;
+            cancelAnimationFrame(gameLoopRef.current);
+            gameLoopRef.current = null;
+            handleGameOver();
+          }
           return;
         }
       }
@@ -108,9 +122,19 @@ export const useSnakeGameLoop = ({
         const newScore = score + 10;
         setScore(newScore);
         
-        // Generate new food
-        const newFood = generateFood(newSnake);
-        setFood(newFood);
+        // Generate new food - assegurar que a comida seja gerada corretamente
+        try {
+          const newFood = generateFood(newSnake);
+          console.log("Nova comida gerada:", newFood);
+          setFood(newFood);
+        } catch (error) {
+          console.error("Erro ao gerar comida:", error);
+          // Tentar novamente com uma posição aleatória como fallback
+          setFood({
+            x: Math.floor(Math.random() * GRID_SIZE),
+            y: Math.floor(Math.random() * GRID_SIZE)
+          });
+        }
         
         // Increase speed slightly when snake grows
         // Minimum speed limit to keep game playable
@@ -131,13 +155,16 @@ export const useSnakeGameLoop = ({
     }
     
     // Continue game loop - apenas se o jogo não terminou
-    if (!isGameOver && !isPaused) {
+    if (!isGameOver && !isPaused && !gameOverCalledRef.current) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
 
   // Start game loop with improved management
   const startGameLoop = useCallback(() => {
+    // Resetar o estado de game over
+    gameOverCalledRef.current = false;
+    
     // Cancel any existing animation frame first
     if (gameLoopRef.current !== null) {
       cancelAnimationFrame(gameLoopRef.current);

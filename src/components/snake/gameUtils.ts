@@ -11,21 +11,21 @@ export const generateFood = (snake: Coordinate[]): Coordinate => {
   };
   
   // Ensure food doesn't appear on the snake
-  const isOnSnake = snake.some(segment => 
+  let isOnSnake = snake.some(segment => 
     segment.x === newFood.x && segment.y === newFood.y
   );
   
-  if (isOnSnake) {
-    // Garantir que a recursão não entre em loop infinito
-    // tentando no máximo 100 vezes encontrar uma posição válida
-    let attempts = 0;
-    while (isOnSnake && attempts < 100) {
-      newFood = {
-        x: Math.floor(Math.random() * GRID_SIZE),
-        y: Math.floor(Math.random() * GRID_SIZE)
-      };
-      attempts++;
-    }
+  // Garantir que a comida não apareça sobre a cobra
+  let attempts = 0;
+  while (isOnSnake && attempts < 100) {
+    newFood = {
+      x: Math.floor(Math.random() * GRID_SIZE),
+      y: Math.floor(Math.random() * GRID_SIZE)
+    };
+    isOnSnake = snake.some(segment => 
+      segment.x === newFood.x && segment.y === newFood.y
+    );
+    attempts++;
   }
   
   return newFood;
@@ -66,7 +66,7 @@ export const drawGame = (
   
   ctx.stroke();
   
-  // Draw food - verificar se a comida existe
+  // Draw food - garantir que a comida seja desenhada corretamente
   if (food && typeof food.x === 'number' && typeof food.y === 'number') {
     ctx.fillStyle = '#F97316';
     ctx.beginPath();
@@ -78,6 +78,8 @@ export const drawGame = (
       2 * Math.PI
     );
     ctx.fill();
+  } else {
+    console.warn('Food position is invalid:', food);
   }
   
   // Draw snake - use a simpler rendering method for better performance
