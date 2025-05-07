@@ -1,3 +1,4 @@
+
 import { useRef, useCallback, useEffect } from 'react';
 import { Coordinate, GRID_SIZE } from '@/components/snake/types';
 import { generateFood, drawGame } from '@/components/snake/gameUtils';
@@ -72,34 +73,44 @@ export const useSnakeGameLoop = ({
           break;
       }
       
-      // Check for collisions with walls
+      // Check for collisions with walls - Corrigindo a detecção de colisão com as paredes
       if (
         head.x < 0 || 
         head.x >= GRID_SIZE || 
         head.y < 0 || 
         head.y >= GRID_SIZE
       ) {
+        // Garantir que o gameOver é chamado apenas uma vez
+        cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
         handleGameOver();
         return;
       }
       
       // Check for collisions with self
-      if (currentSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        handleGameOver();
-        return;
+      for (let i = 0; i < currentSnake.length; i++) {
+        if (currentSnake[i].x === head.x && currentSnake[i].y === head.y) {
+          // Garantir que o gameOver é chamado apenas uma vez
+          cancelAnimationFrame(gameLoopRef.current);
+          gameLoopRef.current = null;
+          handleGameOver();
+          return;
+        }
       }
       
       // Create new snake array
       const newSnake = [head, ...currentSnake];
       
       // Check if snake ate food
-      if (head.x === food.x && head.y === food.y) {
+      const ateFood = head.x === food.x && head.y === food.y;
+      if (ateFood) {
         // Increase score
         const newScore = score + 10;
         setScore(newScore);
         
         // Generate new food
-        setFood(generateFood(newSnake));
+        const newFood = generateFood(newSnake);
+        setFood(newFood);
         
         // Increase speed slightly when snake grows
         // Minimum speed limit to keep game playable
@@ -119,8 +130,8 @@ export const useSnakeGameLoop = ({
       }
     }
     
-    // Continue game loop
-    if (!isPaused && !isGameOver) {
+    // Continue game loop - apenas se o jogo não terminou
+    if (!isGameOver && !isPaused) {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     }
   }, [isGameOver, isPaused, directionRef, snakeRef, food, score, canvasRef, setSnake, setFood, setScore, handleGameOver]);
@@ -130,6 +141,7 @@ export const useSnakeGameLoop = ({
     // Cancel any existing animation frame first
     if (gameLoopRef.current !== null) {
       cancelAnimationFrame(gameLoopRef.current);
+      gameLoopRef.current = null;
     }
     
     // Only start if game is active
@@ -142,6 +154,16 @@ export const useSnakeGameLoop = ({
   // Reset speed when game restarts
   const resetSpeed = useCallback(() => {
     updateInterval.current = 150; // Reset to default speed
+  }, []);
+  
+  // Cleanup animation frame on component unmount
+  useEffect(() => {
+    return () => {
+      if (gameLoopRef.current !== null) {
+        cancelAnimationFrame(gameLoopRef.current);
+        gameLoopRef.current = null;
+      }
+    };
   }, []);
   
   return {
