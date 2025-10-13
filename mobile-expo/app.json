@@ -28,7 +28,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "webappUrl": "https://seu-dominio.com/"
+      "webappUrl": "https://gilded-twilight-fb841a.netlify.app"
     }
   }
 }
