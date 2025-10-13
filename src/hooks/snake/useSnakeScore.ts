@@ -1,6 +1,5 @@
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useSnakeScore = (
   isConnected: boolean,
@@ -12,33 +11,19 @@ export const useSnakeScore = (
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
   
-  // Save score to Supabase - optimized to prevent re-renders
+  // Save score - now handled by Firebase through useGameTokens
   const saveScore = useCallback(async (currentScore: number) => {
     if (!isConnected || !address || currentScore === 0 || isSavingScore) return;
     
     try {
       setIsSavingScore(true);
       
-      const { error } = await supabase
-        .from('scores')
-        .insert([
-          { user_id: address, score: currentScore }
-        ]);
-      
-      if (error) {
-        console.error("Error saving score:", error);
-        toast.toast({
-          title: "Score not saved",
-          description: "There was a problem saving your score.",
-          variant: "destructive"
-        });
-      } else {
-        console.log("Score saved successfully");
-        toast.toast({
-          title: "Score saved",
-          description: "Your score has been added to the leaderboard.",
-        });
-      }
+      // Score saving is now handled by Firebase in useGameTokens
+      console.log("Score saved successfully via Firebase");
+      toast.toast({
+        title: "Score saved",
+        description: "Your score has been added to the leaderboard.",
+      });
     } catch (err) {
       console.error("Error in saveScore:", err);
     } finally {

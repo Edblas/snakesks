@@ -11,13 +11,21 @@ export const useTokenBalance = (address: string | null) => {
 
   // Initialize provider and token contract
   useEffect(() => {
-    if (isMetaMaskInstalled() && address) {
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(web3Provider);
-      
-      const contract = getTokenContract(web3Provider);
-      setTokenContract(contract);
-    }
+    const initializeContract = async () => {
+      if (isMetaMaskInstalled() && address) {
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        setProvider(web3Provider);
+        
+        try {
+          const contract = await getTokenContract(web3Provider);
+          setTokenContract(contract);
+        } catch (error) {
+          console.error("Failed to initialize token contract:", error);
+        }
+      }
+    };
+    
+    initializeContract();
   }, [address]);
 
   // Fetch token balance

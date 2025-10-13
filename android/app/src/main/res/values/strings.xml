@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Snake SKS</string>
+    <string name="title_activity_main">Snake SKS</string>
+    <string name="package_name">com.snakesks.app</string>
+    <string name="custom_url_scheme">com.snakesks.app</string>
+</resources>

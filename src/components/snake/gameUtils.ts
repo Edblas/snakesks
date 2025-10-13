@@ -1,9 +1,8 @@
 
-import { Coordinate } from './types';
+import { Coordinate, GRID_SIZE } from './types';
 
 // Generate random food position
 export const generateFood = (snake: Coordinate[]): Coordinate => {
-  const GRID_SIZE = 20;
   
   let newFood = {
     x: Math.floor(Math.random() * GRID_SIZE),
@@ -49,82 +48,67 @@ export const generateFood = (snake: Coordinate[]): Coordinate => {
   return newFood;
 };
 
-// Draw game on canvas with improved performance
 export const drawGame = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   snake: Coordinate[],
-  food: Coordinate,
-): void => {
-  const CELL_SIZE = 20;
+  food: Coordinate | null
+) => {
   const canvas = canvasRef.current;
   if (!canvas) return;
-  
-  const ctx = canvas.getContext('2d', { alpha: false });
+
+  const ctx = canvas.getContext('2d');
   if (!ctx) return;
-  
-  // Clear canvas - faster method
-  ctx.fillStyle = '#121212';
+
+  // Calculate cell size based on canvas dimensions
+  const cellSize = canvas.width / GRID_SIZE;
+
+  // Clear canvas with background color
+  ctx.fillStyle = '#1a1a1a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Draw lighter grid for better performance
-  ctx.strokeStyle = '#1F1F1F';
-  ctx.beginPath();
-  
-  // Draw vertical grid lines
-  for (let i = 0; i <= 20; i++) {
-    ctx.moveTo(i * CELL_SIZE, 0);
-    ctx.lineTo(i * CELL_SIZE, 20 * CELL_SIZE);
-  }
-  
-  // Draw horizontal grid lines
-  for (let i = 0; i <= 20; i++) {
-    ctx.moveTo(0, i * CELL_SIZE);
-    ctx.lineTo(20 * CELL_SIZE, i * CELL_SIZE);
-  }
-  
-  ctx.stroke();
-  
-  // Draw food with additional validation
-  if (food && typeof food.x === 'number' && typeof food.y === 'number' &&
-      food.x >= 0 && food.x < 20 && food.y >= 0 && food.y < 20) {
-    ctx.fillStyle = '#F97316';
+
+  // Draw grid
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= GRID_SIZE; i++) {
+    // Vertical lines
     ctx.beginPath();
-    ctx.arc(
-      food.x * CELL_SIZE + CELL_SIZE / 2,
-      food.y * CELL_SIZE + CELL_SIZE / 2,
-      CELL_SIZE / 2 - 2,
-      0,
-      2 * Math.PI
-    );
-    ctx.fill();
-  } else {
-    console.warn('Invalid food position:', food);
-  }
-  
-  // Draw snake - use a simpler rendering method for better performance
-  if (snake && snake.length > 0) {
-    const head = snake[0];
-    const body = snake.slice(1);
+    ctx.moveTo(i * cellSize, 0);
+    ctx.lineTo(i * cellSize, canvas.height);
+    ctx.stroke();
     
-    // Draw head
-    ctx.fillStyle = '#4ADE80';
+    // Horizontal lines
+    ctx.beginPath();
+    ctx.moveTo(0, i * cellSize);
+    ctx.lineTo(canvas.width, i * cellSize);
+    ctx.stroke();
+  }
+
+  // Draw food
+  if (food && food.x >= 0 && food.x < GRID_SIZE && food.y >= 0 && food.y < GRID_SIZE) {
+    ctx.fillStyle = '#ff6b6b';
     ctx.fillRect(
-      head.x * CELL_SIZE,
-      head.y * CELL_SIZE,
-      CELL_SIZE - 1,
-      CELL_SIZE - 1
+      food.x * cellSize + 1,
+      food.y * cellSize + 1,
+      cellSize - 2,
+      cellSize - 2
     );
-    
-    // Draw body with single color for better performance
-    ctx.fillStyle = 'rgba(74, 222, 128, 0.8)';
-    for (let i = 0; i < body.length; i++) {
-      const segment = body[i];
-      ctx.fillRect(
-        segment.x * CELL_SIZE,
-        segment.y * CELL_SIZE,
-        CELL_SIZE - 1,
-        CELL_SIZE - 1
-      );
-    }
   }
+
+  // Draw snake
+  snake.forEach((segment, index) => {
+    if (index === 0) {
+      // Head
+      ctx.fillStyle = '#4ecdc4';
+    } else {
+      // Body
+      ctx.fillStyle = '#45b7aa';
+    }
+    
+    ctx.fillRect(
+      segment.x * cellSize + 1,
+      segment.y * cellSize + 1,
+      cellSize - 2,
+      cellSize - 2
+    );
+  });
 };

@@ -103,8 +103,8 @@ export const useSnakeGameLoop = ({
         return;
       }
       
-      // Check for collisions with self
-      for (let i = 1; i < currentSnake.length; i++) {
+      // Check for collisions with self (skip head)
+      for (let i = 0; i < currentSnake.length; i++) {
         if (currentSnake[i].x === head.x && currentSnake[i].y === head.y) {
           // Ensure gameOver is called only once
           if (!gameOverCalledRef.current) {
@@ -127,13 +127,14 @@ export const useSnakeGameLoop = ({
       const currentFood = food;
       
       // Check if food is valid
-      if (currentFood && typeof currentFood.x !== 'number' || typeof currentFood.y !== 'number' ||
+      if (!currentFood || typeof currentFood.x !== 'number' || typeof currentFood.y !== 'number' ||
           currentFood.x < 0 || currentFood.x >= GRID_SIZE || 
           currentFood.y < 0 || currentFood.y >= GRID_SIZE) {
         console.warn("Fixing invalid food position");
         const newFood = generateFood(newSnake);
         lastValidFoodRef.current = newFood;
         setFood(newFood);
+        return; // Skip this frame to avoid issues
       }
       
       // Check if snake ate food
@@ -174,13 +175,8 @@ export const useSnakeGameLoop = ({
       
       // Draw game (only if canvas exists)
       if (canvasRef.current) {
-        // Use last valid food if current is invalid
-        const foodToDraw = (food && typeof food.x === 'number' && typeof food.y === 'number' &&
-                          food.x >= 0 && food.x < GRID_SIZE && 
-                          food.y >= 0 && food.y < GRID_SIZE) 
-                          ? food : lastValidFoodRef.current;
-                          
-        drawGame(canvasRef, newSnake, foodToDraw);
+        // Use current food since we validated it above
+        drawGame(canvasRef, newSnake, currentFood);
       }
     }
     

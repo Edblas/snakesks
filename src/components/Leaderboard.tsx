@@ -1,72 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useFirebaseScores } from '@/hooks/useFirebaseScores';
 import { useWeb3 } from '@/components/Web3Provider';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
-type ScoreEntry = {
-  id: string;
-  score: number;
-  created_at: string;
-  user_id: string;
-};
-
 const Leaderboard = () => {
   const { toast } = useToast();
-  const [scores, setScores] = useState<ScoreEntry[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const { isConnected, address } = useWeb3();
-  const itemsPerPage = 10;
-
-  useEffect(() => {
-    fetchScores();
-  }, [currentPage]);
-
-  const fetchScores = async () => {
-    try {
-      setIsLoading(true);
-      
-      // First, get the count of all scores
-      const { count, error: countError } = await supabase
-        .from('scores')
-        .select('*', { count: 'exact', head: true });
-      
-      if (countError) {
-        throw countError;
-      }
-      
-      if (count !== null) {
-        setTotalPages(Math.ceil(count / itemsPerPage));
-      }
-      
-      // Then fetch the current page of scores
-      const { data, error } = await supabase
-        .from('scores')
-        .select('*')
-        .order('score', { ascending: false })
-        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
-      
-      if (error) {
-        throw error;
-      }
-      
-      setScores(data || []);
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error);
-      toast({
-        title: "Error loading leaderboard",
-        description: "Could not load the leaderboard data. Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { 
+    scores, 
+    isLoading, 
+    currentPage, 
+    totalPages, 
+    setCurrentPage, 
+    itemsPerPage,
+    refreshScores 
+  } = useFirebaseScores();
 
   // Format date to be more readable
   const formatDate = (dateString: string) => {
@@ -106,12 +58,12 @@ const Leaderboard = () => {
               scores.map((score, index) => (
                 <TableRow 
                   key={score.id}
-                  className={address === score.user_id ? "bg-gray-800 bg-opacity-50" : ""}
+                  className={address === score.userId ? "bg-gray-800 bg-opacity-50" : ""}
                 >
                   <TableCell className="font-medium">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                   <TableCell className="font-bold text-game-token">{score.score}</TableCell>
-                  <TableCell>{formatUserId(score.user_id)}</TableCell>
-                  <TableCell>{formatDate(score.created_at)}</TableCell>
+                  <TableCell>{score.playerName || formatUserId(score.userId)}</TableCell>
+                  <TableCell>{formatDate(score.createdAt)}</TableCell>
                 </TableRow>
               ))
             )}

@@ -1,12 +1,20 @@
 
 import { ethers } from 'ethers';
+import { ensurePolygonNetwork } from './networkConfig';
 
-// SKS Token contract configuration
+// SKS Token contract configuration on Polygon Network
 export const SKS_TOKEN_CONFIG = {
   address: '0x4507172aD2bc977FeC89C3Cff5Fa16B79856a433',
   symbol: 'SKS',
+  name: 'Skillswap Token',
   decimals: 18,
+  totalSupply: 100000000, // 100 million tokens
   minWithdrawal: 1000, // Minimum withdrawal amount: 1000 tokens
+  rewardPerGame: 5, // Tokens earned per game
+  dailyLimit: 100, // Daily reward limit per player
+  network: 'Polygon',
+  chainId: 137,
+  explorerUrl: 'https://polygonscan.com/token/0x4507172aD2bc977FeC89C3Cff5Fa16B79856a433',
 };
 
 // ABI for ERC20 token - contains only the methods we need
@@ -23,8 +31,11 @@ export const ERC20_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 ];
 
-// Get contract instance
-export const getTokenContract = (provider: ethers.providers.Web3Provider) => {
+// Get contract instance with network validation
+export const getTokenContract = async (provider: ethers.providers.Web3Provider) => {
+  // Ensure user is on Polygon network
+  await ensurePolygonNetwork();
+  
   return new ethers.Contract(
     SKS_TOKEN_CONFIG.address,
     ERC20_ABI,

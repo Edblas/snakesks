@@ -11,6 +11,7 @@ interface UseGameOverProps {
   saveScore: (score: number) => void;
   setIsGameOver: (isGameOver: boolean) => void;
   gameLoopRef: React.MutableRefObject<number | null>;
+  onGameEnd?: (score: number) => void;
 }
 
 export const useGameOver = ({
@@ -21,7 +22,8 @@ export const useGameOver = ({
   address,
   saveScore,
   setIsGameOver,
-  gameLoopRef
+  gameLoopRef,
+  onGameEnd
 }: UseGameOverProps) => {
   const toast = useToast();
   
@@ -44,11 +46,16 @@ export const useGameOver = ({
       saveScore(score);
     }
 
+    // Chamar callback para sistema de recompensas
+    if (onGameEnd) {
+      onGameEnd(score);
+    }
+
     toast.toast({
       title: "Game Over!",
       description: `Your score: ${score}. Watch an ad to earn SKS tokens!`,
     });
-  }, [score, highScore, setHighScore, isConnected, address, saveScore, setIsGameOver, gameLoopRef, toast]);
+  }, [score, highScore, setHighScore, isConnected, address, saveScore, setIsGameOver, gameLoopRef, onGameEnd, toast]);
   
   return { handleGameOver };
 };

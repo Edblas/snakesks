@@ -1,7 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { ethers } from 'ethers';
 import { isMetaMaskInstalled, isCapacitorApp, createMetaMaskDeepLink, getEthBalance, getWalletErrorMessage } from '@/utils/walletUtils';
+import { switchToPolygon, isPolygonNetwork } from '@/utils/polygonConfig';
+import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from './use-mobile';
 
 export const useWalletConnection = () => {
@@ -63,6 +65,26 @@ export const useWalletConnection = () => {
         method: 'eth_requestAccounts' 
       });
       
+      // Verificar se está na rede Polygon
+      const isOnPolygon = await isPolygonNetwork();
+      if (!isOnPolygon) {
+        toast({
+          title: "Rede incorreta",
+          description: "Trocando para a rede Polygon...",
+        });
+        
+        const switched = await switchToPolygon();
+        if (!switched) {
+          toast({
+            title: "Erro de rede",
+            description: "Não foi possível trocar para a rede Polygon. Por favor, troque manualmente.",
+            variant: "destructive",
+          });
+          setIsConnecting(false);
+          return;
+        }
+      }
+      
       setAddress(accounts[0]);
       setIsConnected(true);
       
@@ -71,14 +93,14 @@ export const useWalletConnection = () => {
       setBalance(ethBalance);
       
       toast({
-        title: "Wallet connected",
-        description: `Connected to ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
+        title: "Carteira conectada",
+        description: `Conectado à rede Polygon: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`,
       });
     } catch (error) {
       console.error("Failed to connect wallet:", error);
       toast({
-        title: "Connection failed",
-        description: "Failed to connect to wallet. Please try again.",
+        title: "Falha na conexão",
+        description: "Não foi possível conectar à carteira. Tente novamente.",
         variant: "destructive",
       });
     } finally {

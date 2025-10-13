@@ -23,7 +23,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   
   return (
     <>
-      <div className={`grid grid-cols-3 gap-2 mb-2 ${isMobile ? 'w-[120px]' : 'w-[150px]'}`}>
+      <div className={`game-controls grid grid-cols-3 gap-2 mb-2 ${isMobile ? 'w-[120px]' : 'w-[150px]'}`}>
         <div></div>
         <Button 
           onClick={() => handleDirectionClick('UP')}

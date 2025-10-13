@@ -1,10 +1,7 @@
-
 import { useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useWeb3 } from '@/components/Web3Provider';
 import { Direction, INITIAL_SNAKE } from '@/components/snake/types';
-
-// Import our hooks
 import { useSnakeMovement } from './useSnakeMovement';
 import { useSnakeScore } from './useSnakeScore';
 import { useSnakeGameLoop } from './useSnakeGameLoop';
@@ -17,44 +14,53 @@ import { useDirectionControls } from './useDirectionControls';
 import { useGameInitialization } from './useGameInitialization';
 import { useGameLoopManager } from './useGameLoopManager';
 
-export const useSnakeGame = () => {
+export const useSnakeGame = (onGameEnd?: (score: number) => void) => {
   const toast = useToast();
   const { isConnected, address } = useWeb3();
-  
-  // Initialize game state with improved state management
+
+  // Initialize game state
   const {
-    isGameOver, setIsGameOver,
-    isPaused, setIsPaused, togglePause,
-    gameStarted, setGameStarted,
-    isSavingScore, setIsSavingScore,
-    resetGameState
+    isGameOver,
+    setIsGameOver,
+    isPaused,
+    setIsPaused,
+    togglePause,
+    gameStarted,
+    setGameStarted,
+    isSavingScore,
+    setIsSavingScore,
+    resetGameState,
   } = useGameState();
-  
+
   // Initialize splash screen state
   const { showSplash, setShowSplash } = useSplashScreen();
-  
-  // Initialize movement-related state
-  const { 
-    snake, setSnake, snakeRef, 
-    food, setFood, direction, 
-    setDirection, directionRef 
-  } = useSnakeMovement();
-  
-  // Initialize score-related state and functions
-  const { 
-    score, setScore, highScore, 
-    setHighScore, saveScore 
-  } = useSnakeScore(
-    isConnected, 
-    address, 
-    isSavingScore, 
-    setIsSavingScore, 
-    toast
-  );
 
-  // Initialize game initialization (canvasRef and gameLoopRef)
+  // Initialize movement-related state
+  const {
+    snake,
+    setSnake,
+    snakeRef,
+    food,
+    setFood,
+    direction,
+    setDirection,
+    directionRef,
+    moveSnake,
+    checkFoodCollision,
+  } = useSnakeMovement();
+
+  // Initialize score-related state and functions
+  const {
+    score,
+    setScore,
+    highScore,
+    setHighScore,
+    saveScore,
+  } = useSnakeScore(isConnected, address, isSavingScore, setIsSavingScore, toast);
+
+  // Initialize game initialization
   const { canvasRef, gameLoopRef } = useGameInitialization(setHighScore);
-  
+
   // Initialize game over handler
   const { handleGameOver } = useGameOver({
     score,
@@ -64,25 +70,26 @@ export const useSnakeGame = () => {
     address,
     saveScore,
     setIsGameOver,
-    gameLoopRef
+    gameLoopRef,
+    onGameEnd,
   });
-  
-  // Initialize game loop with improved performance
+
+  // Initialize game loop
   const { startGameLoop, resetSpeed } = useSnakeGameLoop({
     isGameOver,
     isPaused,
     directionRef,
     snakeRef,
     setSnake,
-    food, 
+    food,
     setFood,
     score,
     setScore,
     canvasRef,
-    handleGameOver
+    handleGameOver,
   });
-  
-  // Initialize controls with better pause handling
+
+  // Initialize controls
   const { togglePause: handleTogglePause, resetGame } = useSnakeControls({
     setSnake,
     snakeRef,
@@ -91,7 +98,7 @@ export const useSnakeGame = () => {
     directionRef,
     setIsGameOver,
     setIsPaused,
-    togglePause, // Pass the togglePause function from useGameState
+    togglePause,
     isPaused,
     setScore,
     setGameStarted,
@@ -99,31 +106,31 @@ export const useSnakeGame = () => {
     startGameLoop,
     resetSpeed,
     INITIAL_SNAKE,
-    resetGameState // Pass the resetGameState function
+    resetGameState,
   });
-  
+
   // Initialize direction controls
   const { handleDirectionClick } = useDirectionControls({
     gameStarted,
     directionRef,
-    setDirection
+    setDirection,
   });
-  
-  // Initialize keyboard controls with better pause handling
+
+  // Initialize keyboard controls
   useKeyboardControls({
     gameStarted,
     directionRef,
     setDirection,
-    togglePause: handleTogglePause // Use the optimized toggle function
+    togglePause: handleTogglePause,
   });
-  
-  // Initialize game loop manager with improved loop control
+
+  // Initialize game loop manager
   useGameLoopManager({
     gameStarted,
     isGameOver,
     isPaused,
     startGameLoop,
-    gameLoopRef
+    gameLoopRef,
   });
 
   return {
@@ -135,7 +142,7 @@ export const useSnakeGame = () => {
     isPaused,
     score,
     highScore,
-    showControls: true, // Always show controls
+    showControls: true,
     gameStarted,
     isSavingScore,
     resetGame,

@@ -42,17 +42,20 @@ export const useSnakeControls = ({
 }: UseSnakeControlsProps) => {
   // Handle pause toggle with proper animation frame management
   const handleTogglePause = useCallback(() => {
-    // First toggle the pause state
+    // Check current state before toggling
+    const wasGamePaused = isPaused;
+    
+    // Toggle the pause state
     togglePause();
 
-    // Use setTimeout to ensure state is updated before checking isPaused
+    // Use setTimeout to ensure state is updated
     setTimeout(() => {
-      // If we're unpausing (currently paused, about to be unpaused)
-      if (isPaused) {
+      // If we were paused and now unpausing
+      if (wasGamePaused) {
         // Start the game loop again
         startGameLoop();
       } else {
-        // If we're pausing, cancel the animation frame
+        // If we were playing and now pausing, cancel the animation frame
         if (gameLoopRef.current !== null) {
           cancelAnimationFrame(gameLoopRef.current);
           gameLoopRef.current = null;
