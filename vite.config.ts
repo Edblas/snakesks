@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Base pública usada para produção. Para GitHub Pages, será 
+  // definida via env VITE_BASE="/snakesks/" no workflow.
+  base: process.env.VITE_BASE || "/",
   server: {
     host: "0.0.0.0",
     port: 8080,
