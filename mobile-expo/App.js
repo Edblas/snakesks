@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, ActivityIndicator, Text, Pressable, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, Pressable, Platform, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Constants from 'expo-constants';
 import Unityads from 'asdaily-rn-unityads';
@@ -7,24 +7,30 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 
 function resolveDevServerUrl() {
   const prodUrl = Constants?.expoConfig?.extra?.webappUrl;
-  if (!__DEV__ && prodUrl) {
+  // Sempre prioriza a URL de produção quando configurada
+  if (prodUrl) {
     const normalized = prodUrl.endsWith('/') ? prodUrl : prodUrl + '/';
     return normalized;
   }
+  // Fallback para desenvolvimento local
   const hostUri = Constants?.expoConfig?.hostUri || Constants?.manifest?.hostUri || Constants?.manifest?.debuggerHost || '';
   const host = hostUri.split(':')[0];
-  let ip = host && host.length > 0 ? host : '192.168.1.3'; // fallback para seu IP atual
-  // Preferir loopback quando usamos adb reverse em Android (BlueStacks/emuladores)
-  if (Platform.OS === 'android') {
-    ip = '127.0.0.1';
-  }
+  const ip = host && host.length > 0 ? host : '192.168.1.3';
   return `http://${ip}:8080/`;
 }
 
 const DEV_SERVER_URL = resolveDevServerUrl();
+// URLs explícitas para controle de fallback
+const PROD_URL = (Constants?.expoConfig?.extra?.webappUrl ? (Constants.expoConfig.extra.webappUrl.endsWith('/') ? Constants.expoConfig.extra.webappUrl : `${Constants.expoConfig.extra.webappUrl}/`) : null);
+const LOCAL_DEV_URL = (() => {
+  const hostUri = Constants?.expoConfig?.hostUri || Constants?.manifest?.hostUri || Constants?.manifest?.debuggerHost || '';
+  const host = hostUri.split(':')[0];
+  const ip = host && host.length > 0 ? host : '192.168.1.3';
+  return `http://${ip}:8080/`;
+})();
 
-// Mapeamento de placements padrão da Unity Ads por plataforma
-const UNITY_PLACEMENTS = {
+// Mapeamento de placements da Unity Ads por plataforma (configurável via app.json -> expo.extra.unityPlacements)
+const DEFAULT_UNITY_PLACEMENTS = {
   android: {
     interstitial: 'Interstitial_Android',
     rewarded_video: 'Rewarded_Android',
@@ -37,10 +43,25 @@ const UNITY_PLACEMENTS = {
   },
 };
 
+function getConfiguredPlacements() {
+  try {
+    const extra = Constants?.expoConfig?.extra || {};
+    const unityPlacements = extra?.unityPlacements;
+    if (unityPlacements && typeof unityPlacements === 'object') {
+      return {
+        android: { ...DEFAULT_UNITY_PLACEMENTS.android, ...(unityPlacements.android || {}) },
+        ios: { ...DEFAULT_UNITY_PLACEMENTS.ios, ...(unityPlacements.ios || {}) },
+      };
+    }
+  } catch {}
+  return DEFAULT_UNITY_PLACEMENTS;
+}
+
 function getUnityPlacementId(adType) {
+  const placements = getConfiguredPlacements();
   const platformKey = Platform.OS === 'ios' ? 'ios' : 'android';
-  const key = adType === 'rewarded' ? 'rewarded_video' : adType;
-  return UNITY_PLACEMENTS[platformKey][key] || UNITY_PLACEMENTS[platformKey].interstitial;
+  const key = adType === 'rewarded' || adType === 'rewarded_video' ? 'rewarded_video' : adType;
+  return placements[platformKey][key] || placements[platformKey].interstitial;
 }
 
 // Exibe anúncio nativo via Unity Ads e retorna resultado
@@ -79,7 +100,11 @@ async function showNativeAd(adType) {
     Unityads.addEventListener('onUnityAdsAdFailedToLoad', onLoadFailed);
 
     try {
-      Unityads.loadInterstitial(placementId);
+      if (adType === 'rewarded' || adType === 'rewarded_video') {
+        Unityads.loadRewarded(placementId);
+      } else {
+        Unityads.loadInterstitial(placementId);
+      }
     } catch (e) {
       Unityads.removeEventListener('onUnityAdsShowComplete');
       Unityads.removeEventListener('onUnityAdsShowFailed');
@@ -93,11 +118,14 @@ export default function App() {
   const webViewRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [sourceUri, setSourceUri] = useState(PROD_URL || LOCAL_DEV_URL || DEV_SERVER_URL);
+  const loadTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Inicializa Unity Ads (produção)
-    const ANDROID_GAME_ID = '5957020';
-    const IOS_GAME_ID = '5957021';
+    const extra = Constants?.expoConfig?.extra || {};
+    const ANDROID_GAME_ID = extra?.unityGameIdAndroid || '5957020';
+    const IOS_GAME_ID = extra?.unityGameIdIOS || '5957021';
     const sdkKey = Platform.OS === 'ios' ? IOS_GAME_ID : ANDROID_GAME_ID;
     try {
       Unityads.initialize(sdkKey, 1, () => {
@@ -114,7 +142,7 @@ export default function App() {
         console.log('[RN] SHOW_AD recebido:', data);
         const adType = data?.adType;
         const result = await showNativeAd(adType);
-        const payload = { type: 'AD_RESULT', adType, rewarded: !!result?.rewarded };
+        const payload = { type: 'AD_RESULT', adType, rewarded: !!result?.rewarded, error: result?.error || null };
         const js = `window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(payload)} })); true;`;
         webViewRef.current?.injectJavaScript?.(js);
       }
@@ -125,7 +153,7 @@ export default function App() {
     <View style={styles.container}>
       <WebView
         ref={webViewRef}
-        source={{ uri: DEV_SERVER_URL }}
+        source={{ uri: sourceUri }}
         style={{ flex: 1 }}
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
@@ -134,13 +162,28 @@ export default function App() {
         onLoadStart={() => {
           setLoading(true);
           setErrorMessage(null);
+          if (loadTimeoutRef.current) {
+            try { clearTimeout(loadTimeoutRef.current); } catch {}
+          }
+          loadTimeoutRef.current = setTimeout(() => {
+            setErrorMessage(`Tempo limite excedido ao carregar ${sourceUri}. Verifique sua conexão ou tente novamente.`);
+            setLoading(false);
+          }, 15000);
         }}
-        onLoadEnd={() => setLoading(false)}
+        onLoadEnd={() => {
+          if (loadTimeoutRef.current) {
+            try { clearTimeout(loadTimeoutRef.current); } catch {}
+          }
+          setLoading(false);
+        }}
         onError={(e) => {
+          if (loadTimeoutRef.current) {
+            try { clearTimeout(loadTimeoutRef.current); } catch {}
+          }
           const code = e?.nativeEvent?.code;
           const desc = e?.nativeEvent?.description;
           const url = e?.nativeEvent?.url;
-          setErrorMessage(`Falha ao carregar ${url || DEV_SERVER_URL} (code: ${code ?? 'n/a'})\n${desc ?? 'Erro desconhecido'}`);
+          setErrorMessage(`Falha ao carregar ${url || sourceUri} (code: ${code ?? 'n/a'})\n${desc ?? 'Erro desconhecido'}`);
           setLoading(false);
         }}
       />
@@ -162,6 +205,26 @@ export default function App() {
             }}
           >
             <Text style={styles.reloadButtonText}>Tentar novamente</Text>
+          </Pressable>
+          {PROD_URL && LOCAL_DEV_URL && sourceUri === PROD_URL && (
+            <Pressable
+              style={[styles.reloadButton, { marginTop: 10, backgroundColor: '#0ea5e9' }]}
+              onPress={() => {
+                setErrorMessage(null);
+                setSourceUri(LOCAL_DEV_URL);
+                setLoading(true);
+              }}
+            >
+              <Text style={styles.reloadButtonText}>Usar servidor local</Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={[styles.reloadButton, { marginTop: 10, backgroundColor: '#10b981' }]}
+            onPress={() => {
+              try { Linking.openURL(sourceUri); } catch {}
+            }}
+          >
+            <Text style={styles.reloadButtonText}>Abrir no navegador</Text>
           </Pressable>
         </View>
       )}

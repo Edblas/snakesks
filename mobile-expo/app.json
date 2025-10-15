@@ -28,7 +28,21 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "webappUrl": "https://gilded-twilight-fb841a.netlify.app"
+      "webappUrl": "https://gilded-twilight-fb841a.netlify.app",
+      "unityGameIdAndroid": "5957020",
+      "unityGameIdIOS": "5957021",
+      "unityPlacements": {
+        "android": {
+          "interstitial": "Interstitial_Android",
+          "rewarded_video": "Rewarded_Android",
+          "banner": "Banner_Android"
+        },
+        "ios": {
+          "interstitial": "Interstitial_iOS",
+          "rewarded_video": "Rewarded_iOS",
+          "banner": "Banner_iOS"
+        }
+      }
     }
   }
 }

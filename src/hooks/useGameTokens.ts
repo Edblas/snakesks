@@ -66,6 +66,13 @@ export const useGameTokens = (userId: string) => {
           title: "Recompensa Recebida!",
           description: `Você ganhou ${tokensEarned} tokens assistindo ao anúncio!`,
         });
+      } else {
+        // Nenhuma recompensa: possivelmente anúncio falhou ou foi cancelado
+        toast({
+          title: "Anúncio indisponível",
+          description: "Não foi possível exibir ou concluir o anúncio agora. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
       }
       
       return tokensEarned;
